@@ -6,7 +6,7 @@ import AuthController from "../../controllers/AuthController";
 import { Quote } from "lucide-react";
 
 const AdminLogin = () => {
-    document.title = "Sign up - saiful training"
+    document.title = "Sign in - saiful training"
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);

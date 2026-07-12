@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import AdminLogin from "../layouts/admin/login";
 import PrivateRoutes from "./PrivateRoutes";
 import AdminDasboard from "../layouts/admin/Dashboard";
+import AdminCourse from "../layouts/admin/Courses";
 
 //======================================================
 // view admin
@@ -19,6 +20,11 @@ export default function RoutesIndex() {
       <Route path="/admin/dashboard" element={
         <PrivateRoutes>
             <AdminDasboard/>
+        </PrivateRoutes>
+      }/>
+      <Route path="/admin/courses" element={
+        <PrivateRoutes>
+            <AdminCourse/>
         </PrivateRoutes>
       }/>
     </Routes>

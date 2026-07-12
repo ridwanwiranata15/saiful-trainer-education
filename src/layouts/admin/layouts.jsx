@@ -1,7 +1,7 @@
 // AdminLayout.jsx
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Cookies from 'js-cookie';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   GraduationCap, LayoutDashboard, BookOpen, Users, PieChart, 
   LogOut, Menu, ChevronRight, Search, Bell, ChevronDown,
@@ -9,6 +9,8 @@ import {
   Cloud, Target, Eye, Edit, Trash2, X, AlertTriangle, User,
   Calendar, ChevronLeft, Loader2
 } from 'lucide-react';
+import { ChartBarIcon } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 
 // ============================================
 // DATA STORE
@@ -145,10 +147,10 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogout }) => {
         <nav className="flex flex-col p-4 gap-2 overflow-y-auto flex-1">
           <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 mt-2">Menu</p>
           
-          <NavItem icon={LayoutDashboard} label="Dashboard" active={false} />
-          <NavItem icon={BookOpen} label="Courses" active={false} />
+          <NavItem icon={LayoutDashboard} label="Dashboard" active={false} path={'/admin/dashboard'}/>
+          <NavItem icon={BookOpen} label="Courses" active={false} path={'/admin/courses'}/>
           <NavItem icon={Users} label="Clients" active={false} />
-          <NavItem icon={PieChart} label="Sales" active={false} />
+          <NavItem icon={ShoppingBag} label="Orders" active={false} />
         </nav>
 
         {/* Logout Button */}
@@ -167,8 +169,8 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogout }) => {
 };
 
 // Navigation Item
-const NavItem = ({ icon: Icon, label, active }) => (
-  <a href="#" className="group cursor-pointer">
+const NavItem = ({ icon: Icon, label, active, path }) => (
+  <Link to={path} className="group cursor-pointer">
     <div className={`flex items-center rounded-xl px-3 py-2.5 gap-3 transition-all relative overflow-hidden ${
       active ? 'bg-[#0F52BA]/10' : 'hover:bg-gray-100'
     }`}>
@@ -182,7 +184,7 @@ const NavItem = ({ icon: Icon, label, active }) => (
         {label}
       </span>
     </div>
-  </a>
+  </Link>
 );
 
 // Toast Notification
@@ -701,13 +703,13 @@ const fetchUser = async () => {
     try {
         const userCookie = Cookies.get('user');
         if (!userCookie) {
-            console.log('User cookie not found');
+           
             return null;
         }
         
         // ✅ Parse JSON string ke object
         const userData = JSON.parse(userCookie);
-        console.log('User data:', userData);
+        
         
         // Simpan ke state
         SetUser(userData);
@@ -717,7 +719,7 @@ const fetchUser = async () => {
     } catch (error) {
         console.error('Error parsing user data:', error);
         // Jika parsing gagal, tampilkan raw value
-        console.log('Raw cookie value:', Cookies.get('user'));
+       
         return null;
     }
 };
