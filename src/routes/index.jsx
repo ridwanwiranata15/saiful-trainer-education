@@ -4,6 +4,7 @@ import AdminLogin from "../layouts/admin/login";
 import PrivateRoutes from "./PrivateRoutes";
 import AdminDasboard from "../layouts/admin/Dashboard";
 import AdminCourse from "../layouts/admin/Courses";
+import DetailCourse from "../layouts/admin/DetailCourse";
 
 //======================================================
 // view admin
@@ -25,6 +26,11 @@ export default function RoutesIndex() {
       <Route path="/admin/courses" element={
         <PrivateRoutes>
             <AdminCourse/>
+        </PrivateRoutes>
+      }/>
+      <Route path="/admin/courses/:slug" element={
+        <PrivateRoutes>
+            <DetailCourse/>
         </PrivateRoutes>
       }/>
     </Routes>

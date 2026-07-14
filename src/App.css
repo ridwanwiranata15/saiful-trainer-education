@@ -182,3 +182,292 @@
     border-right-color: var(--border);
   }
 }
+
+
+ @keyframes bgShift {
+      0% { background: radial-gradient(circle at 20% 30%, #f8f0ff, #d9e6f2, #c0d9f0); }
+      100% { background: radial-gradient(circle at 80% 70%, #ffe9f0, #d4e4ff, #b8d0f0); }
+    }
+
+    /* ── CARD MODERN ── */
+    .card-modern {
+      max-width: 880px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-radius: 40px;
+      box-shadow: 0 20px 60px rgba(0, 20, 40, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      transition: transform 0.35s ease, box-shadow 0.4s ease;
+      position: relative;
+    }
+
+    .card-modern:hover {
+      transform: scale(1.01) translateY(-4px);
+      box-shadow: 0 30px 80px rgba(0, 20, 40, 0.20), 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+    }
+
+    /* ── IMAGE (kiri) ── */
+    .card-image {
+      flex: 0 0 300px;
+      min-height: 260px;
+      position: relative;
+      overflow: hidden;
+      background: #d0dcec;
+    }
+
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .card-modern:hover .card-image img {
+      transform: scale(1.06);
+    }
+
+    /* overlay subtle di gambar */
+    .card-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.0) 40%, rgba(255,255,255,0.15) 100%);
+      pointer-events: none;
+    }
+
+    /* fallback jika gambar gagal */
+    .card-image .no-image {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #7a8fa3;
+      font-size: 14px;
+      background: #e2e9f2;
+    }
+    .card-image .no-image i {
+      font-size: 48px;
+      opacity: 0.4;
+      margin-bottom: 8px;
+    }
+
+    /* ── CONTENT (kanan) ── */
+    .card-content {
+      flex: 1;
+      padding: 28px 30px 30px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 6px 18px 6px 14px;
+      border-radius: 40px;
+      align-self: flex-start;
+      background: rgba(46, 204, 113, 0.18);
+      color: #0f7b3a;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(46, 204, 113, 0.25);
+      box-shadow: 0 2px 8px rgba(46, 204, 113, 0.08);
+    }
+    .status-badge i {
+      font-size: 8px;
+      color: #0f7b3a;
+    }
+
+    /* variasi status (contoh) */
+    .status-badge.upcoming {
+      background: rgba(255, 159, 67, 0.18);
+      color: #b76e0a;
+      border-color: rgba(255, 159, 67, 0.25);
+    }
+    .status-badge.upcoming i { color: #b76e0a; }
+    .status-badge.past {
+      background: rgba(120, 130, 140, 0.15);
+      color: #5a6a7a;
+      border-color: rgba(120, 130, 140, 0.2);
+    }
+    .status-badge.past i { color: #5a6a7a; }
+    .status-badge.cancelled {
+      background: rgba(231, 76, 60, 0.14);
+      color: #a33;
+      border-color: rgba(231, 76, 60, 0.2);
+    }
+    .status-badge.cancelled i { color: #a33; }
+
+    /* title */
+    .card-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #0f1a2b;
+      line-height: 1.25;
+      letter-spacing: -0.3px;
+      margin-top: 2px;
+    }
+
+    /* date & time */
+    .datetime {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 28px;
+      font-size: 14.5px;
+      color: #1f3348;
+      margin: 2px 0 6px 0;
+    }
+    .datetime .item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.35);
+      padding: 4px 14px 4px 10px;
+      border-radius: 40px;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    .datetime .item i {
+      color: #2a4b6e;
+      font-size: 14px;
+      width: 18px;
+    }
+
+    /* description */
+    .card-description {
+      font-size: 15px;
+      line-height: 1.7;
+      color: #1f3348;
+      margin: 4px 0 6px 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      opacity: 0.9;
+    }
+
+    /* ── LINKS / ACTIONS ── */
+    .card-links {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 20px;
+      margin-top: 10px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .card-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f4b7a;
+      text-decoration: none;
+      padding: 6px 16px 6px 12px;
+      border-radius: 40px;
+      background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      transition: all 0.25s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .card-links a i {
+      font-size: 16px;
+      width: 20px;
+      color: #1f4b7a;
+      transition: transform 0.2s;
+    }
+
+    .card-links a:hover {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: rgba(255, 255, 255, 0.9);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 20, 40, 0.08);
+    }
+    .card-links a:hover i {
+      transform: scale(1.1);
+    }
+
+    /* warna spesifik link */
+    .card-links a.video { color: #b33a4a; }
+    .card-links a.video i { color: #b33a4a; }
+
+    .card-links a.material { color: #1f5a7a; background: rgba(255,255,255,0.2); }
+    .card-links a.material i { color: #1f5a7a; }
+
+    .card-links a.whatsapp { color: #1d8a4f; }
+    .card-links a.whatsapp i { color: #1d8a4f; }
+
+    .card-links a.zoom { color: #0b6e4f; }
+    .card-links a.zoom i { color: #0b6e4f; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 720px) {
+      .card-modern {
+        flex-direction: column;
+        border-radius: 28px;
+        backdrop-filter: blur(12px);
+      }
+      .card-image {
+        flex: 0 0 200px;
+        min-height: 180px;
+        width: 100%;
+      }
+      .card-content {
+        padding: 22px 24px 26px 24px;
+      }
+      .card-title {
+        font-size: 22px;
+      }
+      .datetime .item {
+        padding: 2px 12px 2px 8px;
+        font-size: 13px;
+      }
+      .card-links {
+        gap: 10px;
+      }
+      .card-links a {
+        padding: 4px 14px 4px 10px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 440px) {
+      .card-image {
+        flex: 0 0 150px;
+        min-height: 130px;
+      }
+      .card-content {
+        padding: 18px 18px 22px 18px;
+      }
+      .card-title {
+        font-size: 19px;
+      }
+      .datetime {
+        gap: 6px 12px;
+      }
+      .datetime .item {
+        font-size: 12px;
+        padding: 2px 10px 2px 6px;
+      }
+      .card-description {
+        font-size: 13.5px;
+        -webkit-line-clamp: 4;
+      }
+    }

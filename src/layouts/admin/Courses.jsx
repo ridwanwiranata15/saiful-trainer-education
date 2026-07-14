@@ -1,10 +1,11 @@
 // AdminDashboard.jsx
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { 
-  Search, BookOpen, CheckCircle, CalendarClock, Users, 
-  ChevronLeft, Plus, Eye, Edit, Trash2, X, 
-  AlertTriangle, Loader2, Video, Link, FileText, Image, Calendar
+import {
+  Search, BookOpen, CheckCircle, CalendarClock, Users,
+  ChevronLeft, Plus, Eye, Edit, Trash2, X,
+  AlertTriangle, Loader2, Video, FileText, Image, Calendar
 } from 'lucide-react';
+import { Link } from 'react-router-dom'; // ✅ TAMBAHKAN IMPORT INI
 import AdminLayout from './layouts';
 import Api from '../../services/Api';
 import Cookies from 'js-cookie';
@@ -16,29 +17,69 @@ const getStatusClasses = (status) => {
   const classes = {
     available: 'bg-green-500/10 text-green-500 border-green-500/20',
     upcoming: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    completed: 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+    missed: 'bg-red-500/10 text-red-500 border-red-500/20',
+    completed: 'bg-gray-500/10 text-gray-500 border-gray-500/20' // fallback
   };
   return classes[status] || classes.completed;
 };
 
 const getStatusLabel = (status) => {
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  const labels = {
+    available: 'Available',
+    upcoming: 'Upcoming',
+    missed: 'Missed',
+    completed: 'Completed'
+  };
+  return labels[status] || 'Unknown';
 };
 
 const formatDate = (dateString) => {
   if (!dateString) return 'TBD';
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dateString).toLocaleDateString('en-US', options);
+  try {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  } catch {
+    return 'TBD';
+  }
 };
 
+// ✅ Perbaiki: ambil nama file dari path URL
 const getFileName = (path) => {
   if (!path) return null;
-  return path.split('/').pop();
+  if (typeof path === 'string') {
+    return path.split('/').pop();
+  }
+  return null;
 };
 
-// Generate random ID
-const generateId = () => {
-  return 'CRS-' + String(Math.floor(1000 + Math.random() * 9000));
+// Generate page numbers for pagination
+const getPageNumbers = (currentPage, lastPage) => {
+  const pages = [];
+  const maxVisible = 5;
+
+  if (lastPage <= maxVisible) {
+    for (let i = 1; i <= lastPage; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (currentPage <= 3) {
+      for (let i = 1; i <= 4; i++) pages.push(i);
+      pages.push('...');
+      pages.push(lastPage);
+    } else if (currentPage >= lastPage - 2) {
+      pages.push(1);
+      pages.push('...');
+      for (let i = lastPage - 3; i <= lastPage; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      pages.push('...');
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+      pages.push('...');
+      pages.push(lastPage);
+    }
+  }
+
+  return pages;
 };
 
 // ============================================
@@ -46,15 +87,15 @@ const generateId = () => {
 // ============================================
 
 // Stat Card Component
-const StatCard = ({ 
-  icon: Icon, 
-  title, 
-  value, 
-  subtitle, 
+const StatCard = ({
+  icon: Icon,
+  title,
+  value,
+  subtitle,
   isLoading = false,
-  iconBg = 'bg-[#0F52BA]/10', 
-  iconColor = 'text-[#0F52BA]', 
-  subtitleColor = 'text-gray-500' 
+  iconBg = 'bg-[#0F52BA]/10',
+  iconColor = 'text-[#0F52BA]',
+  subtitleColor = 'text-gray-500'
 }) => (
   <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col gap-4 hover:shadow-md transition-shadow">
     <div className="flex items-center gap-3">
@@ -70,7 +111,7 @@ const StatCard = ({
           <Loader2 className="size-5 text-[#0F52BA] animate-spin" />
         </div>
       ) : (
-        <p className="font-bold text-3xl text-gray-900">{value}</p>
+        <p className="font-bold text-3xl text-gray-900">{value || 0}</p>
       )}
       {subtitle && !isLoading && (
         <span className={`text-xs font-medium ${subtitleColor}`}>
@@ -99,9 +140,37 @@ const StatCardSkeleton = ({ icon: Icon, title, iconBg = 'bg-[#0F52BA]/10', iconC
   </div>
 );
 
+// Loading Skeleton for Table Rows
+const TableRowSkeleton = () => (
+  <tr>
+    <td className="p-4">
+      <div className="flex items-center gap-3">
+        <div className="size-10 rounded-lg bg-gray-200 animate-pulse"></div>
+        <div className="flex-1">
+          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
+    </td>
+    <td className="p-4 hidden lg:table-cell">
+      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse mt-1"></div>
+    </td>
+    <td className="p-4">
+      <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
+    </td>
+    <td className="p-4">
+      <div className="flex justify-end gap-1">
+        <div className="size-8 bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="size-8 bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="size-8 bg-gray-200 rounded-lg animate-pulse"></div>
+      </div>
+    </td>
+  </tr>
+);
+
 // Action Button
 const ActionButton = ({ onClick, icon: Icon, label, danger = false }) => (
-  <button 
+  <button
     onClick={onClick}
     className={`size-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors cursor-pointer ${
       danger ? 'hover:text-red-500 hover:bg-red-500/10' : 'hover:text-[#0F52BA]'
@@ -116,12 +185,20 @@ const ActionButton = ({ onClick, icon: Icon, label, danger = false }) => (
 const FileInput = ({ label, id, accept, onChange, preview, icon: Icon, required = false, error }) => {
   const fileInputRef = useRef(null);
 
+  const handleClear = (e) => {
+    e.stopPropagation();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    onChange({ target: { files: [] } });
+  };
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-900 mb-1.5">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <div 
+      <div
         onClick={() => fileInputRef.current?.click()}
         className={`relative w-full px-4 py-3 rounded-xl border-2 border-dashed transition-colors cursor-pointer bg-gray-50/50 hover:bg-gray-50 ${
           error ? 'border-red-500 hover:border-red-600' : 'border-gray-300 hover:border-[#0F52BA]'
@@ -154,15 +231,9 @@ const FileInput = ({ label, id, accept, onChange, preview, icon: Icon, required 
             </p>
           </div>
           {preview && (
-            <button 
+            <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (fileInputRef.current) {
-                  fileInputRef.current.value = '';
-                }
-                onChange({ target: { files: [] } });
-              }}
+              onClick={handleClear}
               className="size-6 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-500"
             >
               <X className="size-4" />
@@ -186,7 +257,7 @@ const CourseTableRow = ({ id, data, onView, onEdit, onDelete }) => {
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-lg bg-[#0F52BA]/10 flex items-center justify-center shrink-0 overflow-hidden">
             {data.image ? (
-              <img 
+              <img
                 src={data.image instanceof File ? URL.createObjectURL(data.image) : data.image}
                 alt={data.title}
                 className="size-10 rounded-lg object-cover"
@@ -197,7 +268,6 @@ const CourseTableRow = ({ id, data, onView, onEdit, onDelete }) => {
           </div>
           <div>
             <p className="font-semibold text-gray-900 text-sm">{data.title}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{id}</p>
           </div>
         </div>
       </td>
@@ -214,7 +284,9 @@ const CourseTableRow = ({ id, data, onView, onEdit, onDelete }) => {
       </td>
       <td className="p-4 text-right">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <ActionButton onClick={() => onView(id)} icon={Eye} label="View Details" />
+          <Link to={`/admin/courses/${data.slug}`}>
+            <ActionButton icon={Eye} label="View Details" />
+          </Link>
           <ActionButton onClick={() => onEdit(id)} icon={Edit} label="Edit" />
           <ActionButton onClick={() => onDelete(id)} icon={Trash2} label="Delete" danger />
         </div>
@@ -223,7 +295,9 @@ const CourseTableRow = ({ id, data, onView, onEdit, onDelete }) => {
   );
 };
 
-// Form Modal Component
+// ============================================
+// FORM MODAL COMPONENT
+// ============================================
 const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -235,7 +309,7 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
     material_path: null,
     whatsapp_link: '',
     zoom_link: '',
-    status: 'available'
+    status: 'upcoming'
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -254,7 +328,7 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
           material_path: data.material_path || null,
           whatsapp_link: data.whatsapp_link || '',
           zoom_link: data.zoom_link || '',
-          status: data.status || 'available'
+          status: data.status || 'upcoming'
         });
       } else {
         setFormData({
@@ -267,7 +341,7 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
           material_path: null,
           whatsapp_link: '',
           zoom_link: '',
-          status: 'available'
+          status: 'upcoming'
         });
       }
       setErrors({});
@@ -277,7 +351,6 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
   const handleFileChange = (field, e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         setErrors({ ...errors, [field]: 'File size must be less than 10MB' });
         return;
@@ -313,15 +386,14 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
-      // Create FormData for API
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
       formDataToSend.append('date', formData.date);
@@ -330,14 +402,14 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
       formDataToSend.append('whatsapp_link', formData.whatsapp_link || '');
       formDataToSend.append('zoom_link', formData.zoom_link || '');
       formDataToSend.append('status', formData.status);
-      
-      if (formData.image) {
+
+      if (formData.image instanceof File) {
         formDataToSend.append('image', formData.image);
       }
-      if (formData.video) {
+      if (formData.video instanceof File) {
         formDataToSend.append('video', formData.video);
       }
-      if (formData.material_path) {
+      if (formData.material_path instanceof File) {
         formDataToSend.append('material_path', formData.material_path);
       }
 
@@ -347,11 +419,10 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
       } else {
         await onSave(null, formDataToSend);
       }
-      
+
       onClose();
     } catch (error) {
       console.error('Error submitting form:', error);
-      // Handle error from parent
     } finally {
       setIsSubmitting(false);
     }
@@ -359,24 +430,30 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
 
   if (!isOpen) return null;
 
+  // ✅ Tentukan preview nama file dengan benar (string URL atau File)
+  const getPreviewName = (file) => {
+    if (!file) return null;
+    if (file instanceof File) return file.name;
+    if (typeof file === 'string') return getFileName(file);
+    return null;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
           <h3 className="font-bold text-lg text-gray-900">
             {editingId ? 'Edit Course' : 'Add New Course'}
           </h3>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             disabled={isSubmitting}
             className="size-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 cursor-pointer disabled:opacity-50"
           >
             <X className="size-5" />
           </button>
         </div>
-        
-        {/* Form */}
+
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -437,7 +514,7 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
               >
                 <option value="available">Available</option>
                 <option value="upcoming">Upcoming</option>
-                <option value="completed">Completed</option>
+                <option value="missed">Missed</option>
               </select>
             </div>
 
@@ -452,14 +529,13 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
               />
             </div>
 
-            {/* File Inputs */}
             <div className="md:col-span-2">
               <FileInput
                 label="Course Image"
                 id="image"
                 accept="image/*"
                 onChange={(e) => handleFileChange('image', e)}
-                preview={formData.image ? formData.image.name : null}
+                preview={getPreviewName(formData.image)}
                 icon={Image}
                 error={errors.image}
               />
@@ -471,7 +547,7 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
                 id="video"
                 accept="video/*"
                 onChange={(e) => handleFileChange('video', e)}
-                preview={formData.video ? formData.video.name : null}
+                preview={getPreviewName(formData.video)}
                 icon={Video}
                 error={errors.video}
               />
@@ -483,7 +559,7 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
                 id="material"
                 accept=".pdf,.doc,.docx,.ppt,.pptx"
                 onChange={(e) => handleFileChange('material_path', e)}
-                preview={formData.material_path ? formData.material_path.name : null}
+                preview={getPreviewName(formData.material_path)}
                 icon={FileText}
                 error={errors.material_path}
               />
@@ -513,16 +589,16 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
           </div>
 
           <div className="p-5 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-3 -mx-5 -mb-5 mt-4">
-            <button 
-              type="button" 
-              onClick={onClose} 
+            <button
+              type="button"
+              onClick={onClose}
               disabled={isSubmitting}
               className="px-5 py-2.5 rounded-xl font-medium text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isSubmitting}
               className="px-5 py-2.5 rounded-xl font-semibold bg-[#0F52BA] text-white hover:bg-[#0B3D8C] transition-colors shadow-sm shadow-[#0F52BA]/20 cursor-pointer disabled:opacity-50 flex items-center gap-2"
             >
@@ -536,7 +612,9 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
   );
 };
 
-// Detail Modal Component
+// ============================================
+// DETAIL MODAL COMPONENT
+// ============================================
 const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) => {
   if (!isOpen || !itemId || !itemsData[itemId]) return null;
 
@@ -546,29 +624,29 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
 
   const renderFilePreview = (file, type) => {
     if (!file) return null;
-    
+
     if (type === 'image') {
       const imageUrl = file instanceof File ? URL.createObjectURL(file) : file;
       return (
-        <img 
+        <img
           src={imageUrl}
           alt={data.title}
           className="w-full max-h-48 rounded-lg object-cover"
         />
       );
     }
-    
+
     if (type === 'video') {
       const videoUrl = file instanceof File ? URL.createObjectURL(file) : file;
       return (
-        <video 
+        <video
           src={videoUrl}
           controls
           className="w-full max-h-48 rounded-lg"
         />
       );
     }
-    
+
     if (type === 'material') {
       const fileName = file instanceof File ? file.name : getFileName(file);
       return (
@@ -581,7 +659,7 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -593,7 +671,7 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
           <div className="flex gap-4 items-center z-10">
             <div className="size-14 rounded-xl bg-[#0F52BA]/10 flex items-center justify-center shrink-0 overflow-hidden">
               {data.image ? (
-                <img 
+                <img
                   src={data.image instanceof File ? URL.createObjectURL(data.image) : data.image}
                   alt={data.title}
                   className="size-14 rounded-xl object-cover"
@@ -611,7 +689,7 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
             <X className="size-5" />
           </button>
         </div>
-        
+
         <div className="p-6 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
             <div>
@@ -620,7 +698,7 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
                 {statusLabel}
               </span>
             </div>
-            
+
             <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
 
             <div className="col-span-1 md:col-span-2">
@@ -643,7 +721,6 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
               </p>
             </div>
 
-            {/* Image Preview */}
             {data.image && (
               <>
                 <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
@@ -654,7 +731,6 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
               </>
             )}
 
-            {/* Video Preview */}
             {data.video && (
               <>
                 <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
@@ -665,7 +741,6 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
               </>
             )}
 
-            {/* Material Preview */}
             {data.material_path && (
               <>
                 <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
@@ -676,7 +751,6 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
               </>
             )}
 
-            {/* Links Section */}
             {(data.whatsapp_link || data.zoom_link) && (
               <>
                 <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
@@ -684,22 +758,22 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Links</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {data.whatsapp_link && (
-                      <a 
-                        href={data.whatsapp_link} 
-                        target="_blank" 
+                      <a
+                        href={data.whatsapp_link}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm text-green-600 hover:underline bg-gray-50 p-2 rounded-lg"
                       >
                         <svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                         </svg>
                         WhatsApp Group
                       </a>
                     )}
                     {data.zoom_link && (
-                      <a 
-                        href={data.zoom_link} 
-                        target="_blank" 
+                      <a
+                        href={data.zoom_link}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-gray-50 p-2 rounded-lg"
                       >
@@ -712,16 +786,16 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
             )}
           </div>
         </div>
-        
+
         <div className="p-5 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
-          <button 
-            onClick={() => { onDelete(itemId); onClose(); }} 
+          <button
+            onClick={() => { onDelete(itemId); onClose(); }}
             className="px-4 py-2 rounded-xl font-medium text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-sm flex items-center gap-2"
           >
             <Trash2 className="size-4" /> Delete
           </button>
-          <button 
-            onClick={() => { onEdit(itemId); onClose(); }} 
+          <button
+            onClick={() => { onEdit(itemId); onClose(); }}
             className="px-5 py-2.5 rounded-xl font-semibold bg-[#0F52BA] text-white hover:bg-[#0B3D8C] transition-colors shadow-sm shadow-[#0F52BA]/20 cursor-pointer text-sm flex items-center gap-2"
           >
             <Edit className="size-4" /> Edit Course
@@ -732,7 +806,9 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
   );
 };
 
-// Delete Modal Component
+// ============================================
+// DELETE MODAL COMPONENT
+// ============================================
 const DeleteModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
   if (!isOpen) return null;
 
@@ -747,15 +823,15 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
           Are you sure you want to delete this course? This action cannot be undone and will remove all associated data.
         </p>
         <div className="flex items-center gap-3">
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             disabled={isLoading}
             className="flex-1 py-2.5 rounded-xl font-medium text-gray-500 border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
-          <button 
-            onClick={onConfirm} 
+          <button
+            onClick={onConfirm}
             disabled={isLoading}
             className="flex-1 py-2.5 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-500/90 transition-colors shadow-sm shadow-red-500/20 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
           >
@@ -773,7 +849,7 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
 // ============================================
 const AdminCourse = () => {
   document.title = "Halaman kelas - Saiful training";
-  
+
   const [itemsData, setItemsData] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -784,6 +860,7 @@ const AdminCourse = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [tableLoading, setTableLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [courses, setCourses] = useState(0);
@@ -791,6 +868,15 @@ const AdminCourse = () => {
   const [missed, setMissed] = useState(0);
   const [orders, setOrders] = useState(0);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [courseData, setCourseData] = useState({
+    current_page: 1,
+    data: [],
+    from: 1,
+    last_page: 1,
+    per_page: 10,
+    to: 0,
+    total: 0
+  });
 
   // ============================================
   // FETCH DASHBOARD DATA
@@ -799,7 +885,7 @@ const AdminCourse = () => {
     try {
       setLoading(true);
       const token = Cookies.get('token');
-      
+
       if (!token) {
         console.warn('No token found');
         setLoading(false);
@@ -812,21 +898,15 @@ const AdminCourse = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      
-      // Update states with data from API
+
       if (response.data && response.data.data) {
         const data = response.data.data;
         setCourses(data.courses || 0);
         setUpcoming(data.upcoming || 0);
         setMissed(data.missed || 0);
         setOrders(data.orders || 0);
-        
-        // If courses data is available
-        if (data.courses_list) {
-          setItemsData(data.courses_list);
-        }
       }
-      
+
     } catch (error) {
       console.error('Error fetching dashboard:', error);
       showNotification('Failed to fetch dashboard data', 'error');
@@ -836,12 +916,13 @@ const AdminCourse = () => {
   }, []);
 
   // Fetch courses
-  const fetchCourses = useCallback(async () => {
+  const fetchCourses = useCallback(async (page = 1) => {
     try {
+      setTableLoading(true);
       const token = Cookies.get('token');
       if (!token) return;
 
-      const response = await Api.get('/api/admin/courses', {
+      const response = await Api.get(`/api/admin/courses?page=${page}`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`
@@ -849,16 +930,33 @@ const AdminCourse = () => {
       });
 
       if (response.data && response.data.data) {
-        // Transform array to object with id as key
-        const coursesObject = {};
-        response.data.data.forEach(course => {
-          coursesObject[course.id] = course;
+        const responseData = response.data.data;
+
+        setCourseData({
+          current_page: responseData.current_page || 1,
+          data: responseData.data || [],
+          from: responseData.from || 1,
+          last_page: responseData.last_page || 1,
+          per_page: responseData.per_page || 10,
+          to: responseData.to || 0,
+          total: responseData.total || 0
         });
-        setItemsData(coursesObject);
+
+        const itemsObject = {};
+        if (responseData.data && Array.isArray(responseData.data)) {
+          responseData.data.forEach(item => {
+            if (item.id) {
+              itemsObject[item.id] = item;
+            }
+          });
+        }
+        setItemsData(itemsObject);
       }
     } catch (error) {
       console.error('Error fetching courses:', error);
       showNotification('Failed to fetch courses', 'error');
+    } finally {
+      setTableLoading(false);
     }
   }, []);
 
@@ -882,7 +980,7 @@ const AdminCourse = () => {
   // ============================================
   const filteredItems = useMemo(() => {
     return Object.entries(itemsData).filter(([id, data]) => {
-      const searchMatch = searchTerm === '' || 
+      const searchMatch = searchTerm === '' ||
         `${data.title} ${id}`.toLowerCase().includes(searchTerm.toLowerCase());
       const statusMatch = statusFilter === 'all' || data.status === statusFilter;
       return searchMatch && statusMatch;
@@ -890,6 +988,10 @@ const AdminCourse = () => {
   }, [itemsData, searchTerm, statusFilter]);
 
   const filteredCount = filteredItems.length;
+
+  const pageNumbers = useMemo(() => {
+    return getPageNumbers(courseData.current_page, courseData.last_page);
+  }, [courseData.current_page, courseData.last_page]);
 
   // ============================================
   // HANDLERS
@@ -899,7 +1001,7 @@ const AdminCourse = () => {
     try {
       setSubmitting(true);
       const token = Cookies.get('token');
-      
+
       if (!token) {
         showNotification('Authentication required', 'error');
         return;
@@ -907,7 +1009,6 @@ const AdminCourse = () => {
 
       let response;
       if (id) {
-        // Update existing course
         response = await Api.post(`/api/admin/courses/${id}`, formData, {
           headers: {
             Accept: "application/json",
@@ -916,7 +1017,6 @@ const AdminCourse = () => {
           }
         });
       } else {
-        // Create new course
         response = await Api.post('/api/admin/courses', formData, {
           headers: {
             Accept: "application/json",
@@ -935,7 +1035,7 @@ const AdminCourse = () => {
         showNotification(id ? 'Course updated successfully' : 'Course created successfully');
         setFormModalOpen(false);
         setEditingId(null);
-        fetchCourses(); // Refresh data
+        fetchCourses(courseData.current_page || 1);
       }
     } catch (error) {
       console.error('Error saving course:', error);
@@ -962,7 +1062,7 @@ const AdminCourse = () => {
     try {
       setDeleting(true);
       const token = Cookies.get('token');
-      
+
       if (!token) {
         showNotification('Authentication required', 'error');
         return;
@@ -980,25 +1080,30 @@ const AdminCourse = () => {
         delete newData[deleteItemId];
         return newData;
       });
-      
+
       showNotification('Course deleted successfully');
       setDeleteItemId(null);
       setDeleteModalOpen(false);
-      fetchCourses(); // Refresh data
+      fetchCourses(courseData.current_page);
     } catch (error) {
       console.error('Error deleting course:', error);
       showNotification('Failed to delete course', 'error');
     } finally {
       setDeleting(false);
     }
-  }, [deleteItemId, fetchCourses]);
+  }, [deleteItemId, fetchCourses, courseData.current_page]);
 
   const resetFilters = useCallback(() => {
     setSearchTerm('');
     setStatusFilter('all');
   }, []);
 
-  // Modal Handlers
+  const handlePageChange = useCallback(async (page) => {
+    if (page === '...') return;
+    if (page === courseData.current_page) return;
+    await fetchCourses(page);
+  }, [courseData.current_page, fetchCourses]);
+
   const openAddModal = useCallback(() => {
     setEditingId(null);
     setFormModalOpen(true);
@@ -1116,10 +1221,18 @@ const AdminCourse = () => {
               <option value="all">All Status</option>
               <option value="available">Available</option>
               <option value="upcoming">Upcoming</option>
-              <option value="completed">Completed</option>
+              <option value="missed">Missed</option>  {/* ✅ Diperbaiki */}
             </select>
+            {(searchTerm || statusFilter !== 'all') && (
+              <button
+                onClick={resetFilters}
+                className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
-        </div> 
+        </div>
 
         {/* Data Table */}
         <div className="bg-white border border-gray-200 rounded-b-2xl overflow-hidden shadow-sm">
@@ -1142,7 +1255,11 @@ const AdminCourse = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredItems.length > 0 ? (
+                {tableLoading ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <TableRowSkeleton key={`skeleton-${index}`} />
+                  ))
+                ) : filteredItems.length > 0 ? (
                   filteredItems.map(([id, data]) => (
                     <CourseTableRow
                       key={id}
@@ -1156,23 +1273,16 @@ const AdminCourse = () => {
                 ) : (
                   <tr>
                     <td colSpan="4" className="p-8 text-center">
-                      {loading ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <Loader2 className="size-5 text-[#0F52BA] animate-spin" />
-                          <span className="text-gray-500">Loading...</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          <Search className="size-8 text-gray-400" />
-                          <p className="text-gray-500">No courses found</p>
-                          <button
-                            onClick={resetFilters}
-                            className="text-[#0F52BA] text-sm hover:underline"
-                          >
-                            Clear filters
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex flex-col items-center gap-2">
+                        <Search className="size-8 text-gray-400" />
+                        <p className="text-gray-500">No courses found</p>
+                        <button
+                          onClick={resetFilters}
+                          className="text-[#0F52BA] text-sm hover:underline"
+                        >
+                          Clear filters
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -1180,36 +1290,44 @@ const AdminCourse = () => {
             </table>
           </div>
 
-          {filteredItems.length > 0 && (
+          {!tableLoading && filteredItems.length > 0 && (
             <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white">
               <p className="text-sm text-gray-500">
-                Showing <span className="font-medium text-gray-900">1</span> to{' '}
-                <span className="font-medium text-gray-900">{filteredCount}</span> of{' '}
-                <span className="font-medium text-gray-900">
-                  {Object.keys(itemsData).length}
-                </span> entries
+                Showing <span className="font-medium text-gray-900">{courseData.from || 1}</span> to{' '}
+                <span className="font-medium text-gray-900">{courseData.to || filteredCount}</span> of{' '}
+                <span className="font-medium text-gray-900">{courseData.total || Object.keys(itemsData).length}</span> entries
               </p>
               <div className="flex items-center gap-1">
-                <button 
-                  className="size-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50 cursor-pointer" 
-                  disabled
+                <button
+                  onClick={() => handlePageChange(courseData.current_page - 1)}
+                  disabled={courseData.current_page <= 1 || tableLoading}
+                  className="size-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
                 >
                   <ChevronLeft className="size-4" />
                 </button>
-                <button className="size-8 flex items-center justify-center rounded-lg bg-[#0F52BA] text-white font-medium text-sm cursor-pointer shadow-sm shadow-[#0F52BA]/20">
-                  1
-                </button>
-                <button className="size-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 font-medium text-sm text-gray-500 cursor-pointer">
-                  2
-                </button>
-                <button className="size-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 font-medium text-sm text-gray-500 hidden sm:flex cursor-pointer">
-                  3
-                </button>
-                <span className="px-1 text-gray-500 hidden sm:block">...</span>
-                <button className="size-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 font-medium text-sm text-gray-500 hidden sm:flex cursor-pointer">
-                  25
-                </button>
-                <button className="size-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer">
+
+                {pageNumbers.map((page, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handlePageChange(page)}
+                    disabled={page === '...' || tableLoading}
+                    className={`size-8 flex items-center justify-center rounded-lg font-medium text-sm cursor-pointer transition-colors ${
+                      page === courseData.current_page
+                        ? 'bg-[#0F52BA] text-white shadow-sm shadow-[#0F52BA]/20'
+                        : page === '...'
+                        ? 'text-gray-500 cursor-default'
+                        : 'border border-gray-200 hover:bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => handlePageChange(courseData.current_page + 1)}
+                  disabled={courseData.current_page >= courseData.last_page || tableLoading}
+                  className="size-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
+                >
                   <ChevronLeft className="size-4 rotate-180" />
                 </button>
               </div>
@@ -1241,7 +1359,7 @@ const AdminCourse = () => {
         isOpen={deleteModalOpen}
         onClose={() => { setDeleteModalOpen(false); setDeleteItemId(null); }}
         onConfirm={handleDeleteCourse}
-        isLoading={deleting}
+        isLoading={deleting}  
       />
     </AdminLayout>
   );
