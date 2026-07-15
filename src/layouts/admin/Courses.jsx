@@ -1036,6 +1036,7 @@ const AdminCourse = () => {
         setFormModalOpen(false);
         setEditingId(null);
         fetchCourses(courseData.current_page || 1);
+        fetchDashboardData();
       }
     } catch (error) {
       console.error('Error saving course:', error);
@@ -1142,7 +1143,7 @@ const AdminCourse = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Dashboard Management</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Courses Management</h2>
             <p className="text-gray-500 text-sm mt-1">
               Manage training programs, schedules, and availability.
             </p>
@@ -1189,13 +1190,13 @@ const AdminCourse = () => {
                 iconBg="bg-yellow-500/10"
                 iconColor="text-yellow-500"
               />
-              <StatCard
+              {/* <StatCard
                 icon={Users}
                 title="Total Orders"
                 value={orders}
                 subtitle="+5%"
                 subtitleColor="text-green-500 bg-green-500/10 px-2 py-1 rounded-md"
-              />
+              /> */}
             </>
           )}
         </div>

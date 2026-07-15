@@ -149,7 +149,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogout }) => {
           
           <NavItem icon={LayoutDashboard} label="Dashboard" active={false} path={'/admin/dashboard'}/>
           <NavItem icon={BookOpen} label="Courses" active={false} path={'/admin/courses'}/>
-          <NavItem icon={Users} label="Clients" active={false} />
+          
           <NavItem icon={ShoppingBag} label="Orders" active={false} />
         </nav>
 
@@ -642,13 +642,7 @@ const SearchModal = ({ isOpen, onClose }) => {
               iconBg="bg-[#0F52BA]/10"
               iconColor="text-[#0F52BA]"
             />
-            <SearchLink 
-              icon={Users} 
-              label="View Clients" 
-              description="Manage client database"
-              iconBg="bg-green-500/10"
-              iconColor="text-green-500"
-            />
+            
             <SearchLink 
               icon={PieChart} 
               label="Sales Report" 

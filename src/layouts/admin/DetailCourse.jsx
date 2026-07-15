@@ -22,6 +22,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const DetailCourse = () => {
   document.title = "Detail Course";
@@ -152,10 +153,10 @@ const DetailCourse = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       await fetchDetailCourse();
-      alert("Materi berhasil dihapus");
+      toast.success("Materi berhasil dihapus");
     } catch (err) {
       console.error(err);
-      alert("Gagal menghapus materi");
+      toast.error("Gagal menghapus materi");
     } finally {
       setSubmitting(false);
       setDeleteConfirmId(null);
@@ -167,7 +168,7 @@ const DetailCourse = () => {
     e.preventDefault();
     const name = modal.name.trim();
     if (!name) {
-      alert("Nama materi tidak boleh kosong");
+      toast.error("Nama materi tidak boleh kosong");
       return;
     }
 
@@ -187,7 +188,7 @@ const DetailCourse = () => {
             "Content-Type": "application/json",
           },
         });
-        alert("Materi berhasil diperbarui");
+        toast.success("Materi berhasil diperbarui");
       } else {
         // Create
         await Api.post("/api/admin/course/material", payload, {
@@ -196,7 +197,7 @@ const DetailCourse = () => {
             "Content-Type": "application/json",
           },
         });
-        alert("Materi berhasil ditambahkan");
+        toast.success("Materi berhasil ditambahkan");
       }
 
       // Refresh data dan tutup modal
@@ -204,7 +205,7 @@ const DetailCourse = () => {
       setModal((prev) => ({ ...prev, open: false }));
     } catch (err) {
       console.error(err);
-      alert(modal.editMode ? "Gagal memperbarui materi" : "Gagal menambahkan materi");
+      toast.error(modal.editMode ? "Gagal memperbarui materi" : "Gagal menambahkan materi");
     } finally {
       setSubmitting(false);
     }
