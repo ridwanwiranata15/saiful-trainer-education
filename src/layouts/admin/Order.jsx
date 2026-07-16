@@ -3,9 +3,9 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   Search, BookOpen, CheckCircle, CalendarClock, Users,
   ChevronLeft, Plus, Eye, Edit, Trash2, X,
-  AlertTriangle, Loader2, Video, FileText, Image, Calendar
+  AlertTriangle, Loader2, FileText, Image, FileCheck
 } from 'lucide-react';
-import { Link } from 'react-router-dom'; // ✅ TAMBAHKAN IMPORT INI
+import { Link } from 'react-router-dom';
 import AdminLayout from './layouts';
 import Api from '../../services/Api';
 import Cookies from 'js-cookie';
@@ -13,24 +13,22 @@ import Cookies from 'js-cookie';
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
-const getStatusClasses = (status) => {
+const getPaymentOptionClasses = (option) => {
   const classes = {
-    available: 'bg-green-500/10 text-green-500 border-green-500/20',
-    upcoming: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+    pay_now: 'bg-green-500/10 text-green-500 border-green-500/20',
+    pay_later: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
     missed: 'bg-red-500/10 text-red-500 border-red-500/20',
-    completed: 'bg-gray-500/10 text-gray-500 border-gray-500/20' // fallback
   };
-  return classes[status] || classes.completed;
+  return classes[option] || 'bg-gray-500/10 text-gray-500 border-gray-500/20';
 };
 
-const getStatusLabel = (status) => {
+const getPaymentOptionLabel = (option) => {
   const labels = {
-    available: 'Available',
-    upcoming: 'Upcoming',
+    pay_now: 'Pay now',
+    pay_later: 'Pay later',
     missed: 'Missed',
-    completed: 'Completed'
   };
-  return labels[status] || 'Unknown';
+  return labels[option] || option;
 };
 
 const formatDate = (dateString) => {
@@ -43,7 +41,6 @@ const formatDate = (dateString) => {
   }
 };
 
-// ✅ Perbaiki: ambil nama file dari path URL
 const getFileName = (path) => {
   if (!path) return null;
   if (typeof path === 'string') {
@@ -52,15 +49,11 @@ const getFileName = (path) => {
   return null;
 };
 
-// Generate page numbers for pagination
 const getPageNumbers = (currentPage, lastPage) => {
   const pages = [];
   const maxVisible = 5;
-
   if (lastPage <= maxVisible) {
-    for (let i = 1; i <= lastPage; i++) {
-      pages.push(i);
-    }
+    for (let i = 1; i <= lastPage; i++) pages.push(i);
   } else {
     if (currentPage <= 3) {
       for (let i = 1; i <= 4; i++) pages.push(i);
@@ -78,7 +71,6 @@ const getPageNumbers = (currentPage, lastPage) => {
       pages.push(lastPage);
     }
   }
-
   return pages;
 };
 
@@ -153,7 +145,6 @@ const TableRowSkeleton = () => (
     </td>
     <td className="p-4 hidden lg:table-cell">
       <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse mt-1"></div>
     </td>
     <td className="p-4">
       <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
@@ -243,47 +234,38 @@ const FileInput = ({ label, id, accept, onChange, preview, icon: Icon, required 
   );
 };
 
-// Course Table Row Component
-const CourseTableRow = ({ id, data, onView, onEdit, onDelete }) => {
-  const statusClass = getStatusClasses(data.status);
-  const statusLabel = getStatusLabel(data.status);
+// Order Table Row Component
+const OrderTableRow = ({ id, data, onView, onEdit, onDelete }) => {
+  const paymentOptionClass = getPaymentOptionClasses(data.payment_option);
+  const paymentOptionLabel = getPaymentOptionLabel(data.payment_option);
 
   return (
     <tr className="hover:bg-gray-50/30 transition-colors group">
       <td className="p-4">
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-lg bg-[#0F52BA]/10 flex items-center justify-center shrink-0 overflow-hidden">
-            {data.image ? (
-              <img
-                src={data.image instanceof File ? URL.createObjectURL(data.image) : data.image}
-                alt={data.title}
-                className="size-10 rounded-lg object-cover"
-              />
-            ) : (
-              <Image className="size-5 text-[#0F52BA]" />
-            )}
+            <BookOpen className="size-5 text-[#0F52BA]" />
           </div>
           <div>
-            <p className="font-semibold text-gray-900 text-sm">{data.title}</p>
+            <p className="font-semibold text-gray-900 text-sm">{data.user?.name}</p>
+            <p className="text-xs text-gray-500">Course: {data.course?.title || 'N/A'}</p>
           </div>
         </div>
       </td>
       <td className="p-4 hidden lg:table-cell">
         <div className="text-sm">
-          <p className="text-gray-900">{formatDate(data.date)}</p>
-          <p className="text-xs text-gray-500">{data.time || 'TBD'}</p>
+          <p className="text-gray-900">User: {data.user?.name || 'N/A'}</p>
+          <p className="text-xs text-gray-500">Certificate: {data.is_certificate ? 'Yes' : 'No'}</p>
         </div>
       </td>
       <td className="p-4">
-        <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${statusClass}`}>
-          {statusLabel}
+        <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${paymentOptionClass}`}>
+          {paymentOptionLabel}
         </span>
       </td>
       <td className="p-4 text-right">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Link to={`/admin/courses/${data.slug}`}>
-            <ActionButton icon={Eye} label="View Details" />
-          </Link>
+          <ActionButton onClick={() => onView(id)} icon={Eye} label="View Details" />
           <ActionButton onClick={() => onEdit(id)} icon={Edit} label="Edit" />
           <ActionButton onClick={() => onDelete(id)} icon={Trash2} label="Delete" danger />
         </div>
@@ -297,16 +279,12 @@ const CourseTableRow = ({ id, data, onView, onEdit, onDelete }) => {
 // ============================================
 const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    image: null,
-    date: '',
-    time: '',
-    description: '',
-    video: null,
-    material_path: null,
-    whatsapp_link: '',
-    zoom_link: '',
-    status: 'upcoming'
+    course_id: '',
+    user_id: '',
+    is_certificate: false,
+    payment_option: 'pay_later',
+    payment_proof_path: null,
+    certificate_file: null,
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -316,29 +294,21 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
       if (editingId && itemsData[editingId]) {
         const data = itemsData[editingId];
         setFormData({
-          title: data.title || '',
-          image: data.image || null,
-          date: data.date || '',
-          time: data.time || '',
-          description: data.description || '',
-          video: data.video || null,
-          material_path: data.material_path || null,
-          whatsapp_link: data.whatsapp_link || '',
-          zoom_link: data.zoom_link || '',
-          status: data.status || 'upcoming'
+          course_id: data.course_id || '',
+          user_id: data.user_id || '',
+          is_certificate: data.is_certificate || false,
+          payment_option: data.payment_option || 'pay_later',
+          payment_proof_path: data.payment_proof_path || null,
+          certificate_file: data.certificate_file || null,
         });
       } else {
         setFormData({
-          title: '',
-          image: null,
-          date: '',
-          time: '',
-          description: '',
-          video: null,
-          material_path: null,
-          whatsapp_link: '',
-          zoom_link: '',
-          status: 'upcoming'
+          course_id: '',
+          user_id: '',
+          is_certificate: false,
+          payment_option: 'pay_later',
+          payment_proof_path: null,
+          certificate_file: null,
         });
       }
       setErrors({});
@@ -368,46 +338,30 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    }
-    if (!formData.date) {
-      newErrors.date = 'Date is required';
-    }
-    if (!formData.time) {
-      newErrors.time = 'Time is required';
-    }
+    if (!formData.course_id) newErrors.course_id = 'Course ID is required';
+    if (!formData.user_id) newErrors.user_id = 'User ID is required';
+    if (!formData.payment_option) newErrors.payment_option = 'Payment option is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
-
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('date', formData.date);
-      formDataToSend.append('time', formData.time);
-      formDataToSend.append('description', formData.description || '');
-      formDataToSend.append('whatsapp_link', formData.whatsapp_link || '');
-      formDataToSend.append('zoom_link', formData.zoom_link || '');
-      formDataToSend.append('status', formData.status);
+      formDataToSend.append('course_id', formData.course_id);
+      formDataToSend.append('user_id', formData.user_id);
+      formDataToSend.append('is_certificate', formData.is_certificate ? '1' : '0');
+      formDataToSend.append('payment_option', formData.payment_option);
 
-      if (formData.image instanceof File) {
-        formDataToSend.append('image', formData.image);
+      if (formData.payment_proof_path instanceof File) {
+        formDataToSend.append('payment_proof_path', formData.payment_proof_path);
       }
-      if (formData.video instanceof File) {
-        formDataToSend.append('video', formData.video);
-      }
-      if (formData.material_path instanceof File) {
-        formDataToSend.append('material_path', formData.material_path);
+      if (formData.certificate_file instanceof File) {
+        formDataToSend.append('certificate_file', formData.certificate_file);
       }
 
       if (editingId) {
@@ -416,7 +370,6 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
       } else {
         await onSave(null, formDataToSend);
       }
-
       onClose();
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -427,7 +380,6 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
 
   if (!isOpen) return null;
 
-  // ✅ Tentukan preview nama file dengan benar (string URL atau File)
   const getPreviewName = (file) => {
     if (!file) return null;
     if (file instanceof File) return file.name;
@@ -440,7 +392,7 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
         <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
           <h3 className="font-bold text-lg text-gray-900">
-            {editingId ? 'Edit Course' : 'Add New Course'}
+            {editingId ? 'Edit Order' : 'Add New Order'}
           </h3>
           <button
             onClick={onClose}
@@ -453,131 +405,80 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
 
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-900 mb-1.5">
-                Course Title <span className="text-red-500">*</span>
+                Course ID <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="e.g. Advanced Leadership"
-                className={`w-full px-4 py-2.5 rounded-xl border ${errors.title ? 'border-red-500' : 'border-gray-200'
+                value={formData.course_id}
+                onChange={(e) => handleInputChange('course_id', e.target.value)}
+                placeholder="e.g. 1"
+                className={`w-full px-4 py-2.5 rounded-xl border ${errors.course_id ? 'border-red-500' : 'border-gray-200'
                   } focus:outline-none focus:ring-2 focus:ring-[#0F52BA]/20 focus:border-[#0F52BA] text-sm transition-all`}
                 required
               />
-              {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+              {errors.course_id && <p className="text-xs text-red-500 mt-1">{errors.course_id}</p>}
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-1.5">
-                Date <span className="text-red-500">*</span>
+                User ID <span className="text-red-500">*</span>
               </label>
               <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleInputChange('date', e.target.value)}
-                className={`w-full px-4 py-2.5 rounded-xl border ${errors.date ? 'border-red-500' : 'border-gray-200'
+                type="text"
+                value={formData.user_id}
+                onChange={(e) => handleInputChange('user_id', e.target.value)}
+                placeholder="e.g. 5"
+                className={`w-full px-4 py-2.5 rounded-xl border ${errors.user_id ? 'border-red-500' : 'border-gray-200'
                   } focus:outline-none focus:ring-2 focus:ring-[#0F52BA]/20 focus:border-[#0F52BA] text-sm transition-all`}
                 required
               />
-              {errors.date && <p className="text-xs text-red-500 mt-1">{errors.date}</p>}
+              {errors.user_id && <p className="text-xs text-red-500 mt-1">{errors.user_id}</p>}
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1.5">
-                Time <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="time"
-                value={formData.time}
-                onChange={(e) => handleInputChange('time', e.target.value)}
-                className={`w-full px-4 py-2.5 rounded-xl border ${errors.time ? 'border-red-500' : 'border-gray-200'
-                  } focus:outline-none focus:ring-2 focus:ring-[#0F52BA]/20 focus:border-[#0F52BA] text-sm transition-all`}
-                required
-              />
-              {errors.time && <p className="text-xs text-red-500 mt-1">{errors.time}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1.5">Status</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">Payment Option</label>
               <select
-                value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
+                value={formData.payment_option}
+                onChange={(e) => handleInputChange('payment_option', e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0F52BA]/20 focus:border-[#0F52BA] text-sm bg-white transition-all"
               >
-                <option value="available">Available</option>
-                <option value="upcoming">Upcoming</option>
+                <option value="pay_now">Pay now</option>
+                <option value="pay_later">Pay later</option>
                 <option value="missed">Missed</option>
               </select>
             </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-1.5">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Course description"
-                rows="3"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0F52BA]/20 focus:border-[#0F52BA] text-sm transition-all resize-none"
-              />
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">Has Certificate</label>
+              <div className="flex items-center gap-3 pt-2">
+                <input
+                  type="checkbox"
+                  checked={formData.is_certificate}
+                  onChange={(e) => handleInputChange('is_certificate', e.target.checked)}
+                  className="size-5 rounded border-gray-300 text-[#0F52BA] focus:ring-[#0F52BA]/20"
+                />
+                <span className="text-sm text-gray-600">Yes, this order includes a certificate</span>
+              </div>
             </div>
-
             <div className="md:col-span-2">
               <FileInput
-                label="Course Image"
-                id="image"
-                accept="image/*"
-                onChange={(e) => handleFileChange('image', e)}
-                preview={getPreviewName(formData.image)}
+                label="Payment Proof"
+                id="payment_proof"
+                accept="image/*,application/pdf"
+                onChange={(e) => handleFileChange('payment_proof_path', e)}
+                preview={getPreviewName(formData.payment_proof_path)}
                 icon={Image}
-                error={errors.image}
+                error={errors.payment_proof_path}
               />
             </div>
-
             <div className="md:col-span-2">
               <FileInput
-                label="Video File"
-                id="video"
-                accept="video/*"
-                onChange={(e) => handleFileChange('video', e)}
-                preview={getPreviewName(formData.video)}
-                icon={Video}
-                error={errors.video}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <FileInput
-                label="Material File"
-                id="material"
-                accept=".pdf,.doc,.docx,.ppt,.pptx"
-                onChange={(e) => handleFileChange('material_path', e)}
-                preview={getPreviewName(formData.material_path)}
-                icon={FileText}
-                error={errors.material_path}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1.5">WhatsApp Link</label>
-              <input
-                type="url"
-                value={formData.whatsapp_link}
-                onChange={(e) => handleInputChange('whatsapp_link', e.target.value)}
-                placeholder="https://wa.me/1234567890"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0F52BA]/20 focus:border-[#0F52BA] text-sm transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1.5">Zoom Link</label>
-              <input
-                type="url"
-                value={formData.zoom_link}
-                onChange={(e) => handleInputChange('zoom_link', e.target.value)}
-                placeholder="https://zoom.us/j/123456789"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0F52BA]/20 focus:border-[#0F52BA] text-sm transition-all"
+                label="Certificate File"
+                id="certificate"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) => handleFileChange('certificate_file', e)}
+                preview={getPreviewName(formData.certificate_file)}
+                icon={FileCheck}
+                error={errors.certificate_file}
               />
             </div>
           </div>
@@ -597,7 +498,7 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
               className="px-5 py-2.5 rounded-xl font-semibold bg-[#0F52BA] text-white hover:bg-[#0B3D8C] transition-colors shadow-sm shadow-[#0F52BA]/20 cursor-pointer disabled:opacity-50 flex items-center gap-2"
             >
               {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-              {editingId ? 'Update Course' : 'Save Course'}
+              {editingId ? 'Update Order' : 'Save Order'}
             </button>
           </div>
         </form>
@@ -613,35 +514,16 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
   if (!isOpen || !itemId || !itemsData[itemId]) return null;
 
   const data = itemsData[itemId];
-  const statusClass = getStatusClasses(data.status);
-  const statusLabel = getStatusLabel(data.status);
+  const paymentOptionClass = getPaymentOptionClasses(data.payment_option);
+  const paymentOptionLabel = getPaymentOptionLabel(data.payment_option);
 
   const renderFilePreview = (file, type) => {
     if (!file) return null;
-
     if (type === 'image') {
       const imageUrl = file instanceof File ? URL.createObjectURL(file) : file;
-      return (
-        <img
-          src={imageUrl}
-          alt={data.title}
-          className="w-full max-h-48 rounded-lg object-cover"
-        />
-      );
+      return <img src={imageUrl} alt="Proof" className="w-full max-h-48 rounded-lg object-cover" />;
     }
-
-    if (type === 'video') {
-      const videoUrl = file instanceof File ? URL.createObjectURL(file) : file;
-      return (
-        <video
-          src={videoUrl}
-          controls
-          className="w-full max-h-48 rounded-lg"
-        />
-      );
-    }
-
-    if (type === 'material') {
+    if (type === 'pdf') {
       const fileName = file instanceof File ? file.name : getFileName(file);
       return (
         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -653,7 +535,6 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
         </div>
       );
     }
-
     return null;
   };
 
@@ -663,20 +544,12 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
         <div className="p-6 border-b border-gray-200 flex items-start justify-between relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-[#0F52BA]"></div>
           <div className="flex gap-4 items-center z-10">
-            <div className="size-14 rounded-xl bg-[#0F52BA]/10 flex items-center justify-center shrink-0 overflow-hidden">
-              {data.image ? (
-                <img
-                  src={data.image instanceof File ? URL.createObjectURL(data.image) : data.image}
-                  alt={data.title}
-                  className="size-14 rounded-xl object-cover"
-                />
-              ) : (
-                <Image className="size-7 text-[#0F52BA]" />
-              )}
+            <div className="size-14 rounded-xl bg-[#0F52BA]/10 flex items-center justify-center shrink-0">
+              <BookOpen className="size-7 text-[#0F52BA]" />
             </div>
             <div>
-              <h3 className="font-bold text-xl text-gray-900">{data.title}</h3>
-              <p className="text-sm text-gray-500 mt-1">{itemId}</p>
+              <h3 className="font-bold text-xl text-gray-900">{data.user?.name}</h3>
+              <p className="text-sm text-gray-500 mt-1">Course: {data.course?.title || 'N/A'}</p>
             </div>
           </div>
           <button onClick={onClose} className="size-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 cursor-pointer z-10">
@@ -687,94 +560,35 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
         <div className="p-6 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Status</p>
-              <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${statusClass}`}>
-                {statusLabel}
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Payment Option</p>
+              <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${paymentOptionClass}`}>
+                {paymentOptionLabel}
               </span>
             </div>
-
-            <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
-
-            <div className="col-span-1 md:col-span-2">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Schedule</p>
-              <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 flex items-center gap-3">
-                <Calendar className="size-5 text-gray-500" />
-                <div>
-                  <p className="font-medium text-gray-900 text-sm">{formatDate(data.date)}</p>
-                  <p className="text-sm text-gray-500">{data.time || 'TBD'}</p>
-                </div>
-              </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">User</p>
+              <p className="text-sm text-gray-700">{data.user?.name || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Certificate</p>
+              <p className="text-sm text-gray-700">{data.is_certificate ? 'Yes' : 'No'}</p>
             </div>
 
-            <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
-
-            <div className="col-span-1 md:col-span-2">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Description</p>
-              <p className="text-sm text-gray-700 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                {data.description || 'No description available'}
-              </p>
-            </div>
-
-            {data.image && (
+            {data.payment_proof_path && (
               <>
                 <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
                 <div className="col-span-1 md:col-span-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Course Image</p>
-                  {renderFilePreview(data.image, 'image')}
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Payment Proof</p>
+                  {renderFilePreview(data.payment_proof_path, 'image')}
                 </div>
               </>
             )}
-
-            {data.video && (
+            {data.certificate_file && (
               <>
                 <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
                 <div className="col-span-1 md:col-span-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Video</p>
-                  {renderFilePreview(data.video, 'video')}
-                </div>
-              </>
-            )}
-
-            {data.material_path && (
-              <>
-                <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
-                <div className="col-span-1 md:col-span-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Material</p>
-                  {renderFilePreview(data.material_path, 'material')}
-                </div>
-              </>
-            )}
-
-            {(data.whatsapp_link || data.zoom_link) && (
-              <>
-                <div className="col-span-1 md:col-span-2 h-px bg-gray-200"></div>
-                <div className="col-span-1 md:col-span-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Links</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {data.whatsapp_link && (
-                      <a
-                        href={data.whatsapp_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-green-600 hover:underline bg-gray-50 p-2 rounded-lg"
-                      >
-                        <svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                        </svg>
-                        WhatsApp Group
-                      </a>
-                    )}
-                    {data.zoom_link && (
-                      <a
-                        href={data.zoom_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-gray-50 p-2 rounded-lg"
-                      >
-                        <Link className="size-4" /> Zoom Meeting
-                      </a>
-                    )}
-                  </div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Certificate File</p>
+                  {renderFilePreview(data.certificate_file, 'pdf')}
                 </div>
               </>
             )}
@@ -792,7 +606,7 @@ const DetailModal = ({ isOpen, onClose, onEdit, onDelete, itemId, itemsData }) =
             onClick={() => { onEdit(itemId); onClose(); }}
             className="px-5 py-2.5 rounded-xl font-semibold bg-[#0F52BA] text-white hover:bg-[#0B3D8C] transition-colors shadow-sm shadow-[#0F52BA]/20 cursor-pointer text-sm flex items-center gap-2"
           >
-            <Edit className="size-4" /> Edit Course
+            <Edit className="size-4" /> Edit Order
           </button>
         </div>
       </div>
@@ -812,9 +626,9 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
         <div className="size-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="size-7 text-red-500" />
         </div>
-        <h3 className="font-bold text-xl text-gray-900 mb-2">Delete Course?</h3>
+        <h3 className="font-bold text-xl text-gray-900 mb-2">Delete Order?</h3>
         <p className="text-gray-500 text-sm mb-6">
-          Are you sure you want to delete this course? This action cannot be undone and will remove all associated data.
+          Are you sure you want to delete this order? This action cannot be undone.
         </p>
         <div className="flex items-center gap-3">
           <button
@@ -841,12 +655,12 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
 // ============================================
 // MAIN DASHBOARD COMPONENT
 // ============================================
-const AdminCourse = () => {
-  document.title = "Halaman kelas - Saiful training";
+const AdminOrder = () => {
+  document.title = "Order Management - Saiful training";
 
   const [itemsData, setItemsData] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all'); // filter by payment_option
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -857,12 +671,15 @@ const AdminCourse = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [courses, setCourses] = useState(0);
-  const [upcoming, setUpcoming] = useState(0);
-  const [missed, setMissed] = useState(0);
-  const [orders, setOrders] = useState(0);
+
+  // Stats berdasarkan payment_option
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [payNowCount, setPayNowCount] = useState(0);
+  const [payLaterCount, setPayLaterCount] = useState(0);
+  const [missedCount, setMissedCount] = useState(0);
+
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
-  const [courseData, setCourseData] = useState({
+  const [orderData, setOrderData] = useState({
     current_page: 1,
     data: [],
     from: 1,
@@ -879,28 +696,25 @@ const AdminCourse = () => {
     try {
       setLoading(true);
       const token = Cookies.get('token');
-
       if (!token) {
         console.warn('No token found');
         setLoading(false);
         return;
       }
-
       const response = await Api.get('/api/admin/dashboard', {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`
         }
       });
-
       if (response.data && response.data.data) {
         const data = response.data.data;
-        setCourses(data.courses || 0);
-        setUpcoming(data.upcoming || 0);
-        setMissed(data.missed || 0);
-        setOrders(data.orders || 0);
+        setTotalOrders(data.total_orders || 0);
+        setPayNowCount(data.pay_now || 0);
+        setPayLaterCount(data.pay_later || 0);
+        setMissedCount(data.missed || 0);
       }
-
+      
     } catch (error) {
       console.error('Error fetching dashboard:', error);
       showNotification('Failed to fetch dashboard data', 'error');
@@ -909,24 +723,24 @@ const AdminCourse = () => {
     }
   }, []);
 
-  // Fetch courses
-  const fetchCourses = useCallback(async (page = 1) => {
+  // Fetch orders
+  const fetchOrders = useCallback(async (page = 1) => {
     try {
       setTableLoading(true);
       const token = Cookies.get('token');
       if (!token) return;
 
-      const response = await Api.get(`/api/admin/courses?page=${page}`, {
+      const response = await Api.get(`/api/admin/orders?page=${page}`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`
         }
       });
+      
 
       if (response.data && response.data.data) {
         const responseData = response.data.data;
-
-        setCourseData({
+        setOrderData({
           current_page: responseData.current_page || 1,
           data: responseData.data || [],
           from: responseData.from || 1,
@@ -947,8 +761,8 @@ const AdminCourse = () => {
         setItemsData(itemsObject);
       }
     } catch (error) {
-      console.error('Error fetching courses:', error);
-      showNotification('Failed to fetch courses', 'error');
+      console.error('Error fetching orders:', error);
+      showNotification('Failed to fetch orders', 'error');
     } finally {
       setTableLoading(false);
     }
@@ -956,8 +770,8 @@ const AdminCourse = () => {
 
   useEffect(() => {
     fetchDashboardData();
-    fetchCourses();
-  }, [fetchDashboardData, fetchCourses]);
+    fetchOrders();
+  }, [fetchDashboardData, fetchOrders]);
 
   // ============================================
   // NOTIFICATION
@@ -975,27 +789,26 @@ const AdminCourse = () => {
   const filteredItems = useMemo(() => {
     return Object.entries(itemsData).filter(([id, data]) => {
       const searchMatch = searchTerm === '' ||
-        `${data.title} ${id}`.toLowerCase().includes(searchTerm.toLowerCase());
-      const statusMatch = statusFilter === 'all' || data.status === statusFilter;
-      return searchMatch && statusMatch;
+        `${data.course_id} ${data.user_id} ${id}`.toLowerCase().includes(searchTerm.toLowerCase());
+      const paymentMatch = paymentFilter === 'all' || data.payment_option === paymentFilter;
+      return searchMatch && paymentMatch;
     });
-  }, [itemsData, searchTerm, statusFilter]);
+  }, [itemsData, searchTerm, paymentFilter]);
 
   const filteredCount = filteredItems.length;
 
   const pageNumbers = useMemo(() => {
-    return getPageNumbers(courseData.current_page, courseData.last_page);
-  }, [courseData.current_page, courseData.last_page]);
+    return getPageNumbers(orderData.current_page, orderData.last_page);
+  }, [orderData.current_page, orderData.last_page]);
 
   // ============================================
   // HANDLERS
   // ============================================
 
-  const handleSaveCourse = useCallback(async (id, formData) => {
+  const handleSaveOrder = useCallback(async (id, formData) => {
     try {
       setSubmitting(true);
       const token = Cookies.get('token');
-
       if (!token) {
         showNotification('Authentication required', 'error');
         return;
@@ -1003,7 +816,7 @@ const AdminCourse = () => {
 
       let response;
       if (id) {
-        response = await Api.post(`/api/admin/courses/${id}`, formData, {
+        response = await Api.post(`/api/admin/orders/${id}`, formData, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
@@ -1011,7 +824,7 @@ const AdminCourse = () => {
           }
         });
       } else {
-        response = await Api.post('/api/admin/courses', formData, {
+        response = await Api.post('/api/admin/orders', formData, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
@@ -1021,49 +834,48 @@ const AdminCourse = () => {
       }
 
       if (response.data && response.data.data) {
-        const courseData = response.data.data;
+        const order = response.data.data;
         setItemsData(prev => ({
           ...prev,
-          [courseData.id]: courseData
+          [order.id]: order
         }));
-        showNotification(id ? 'Course updated successfully' : 'Course created successfully');
+        showNotification(id ? 'Order updated successfully' : 'Order created successfully');
         setFormModalOpen(false);
         setEditingId(null);
-        fetchCourses(courseData.current_page || 1);
+        fetchOrders(orderData.current_page || 1);
         fetchDashboardData();
       }
     } catch (error) {
-      console.error('Error saving course:', error);
+      console.error('Error saving order:', error);
       if (error.response && error.response.data) {
         const errors = error.response.data.errors;
         if (errors) {
           const errorMessage = Object.values(errors).flat().join(', ');
           showNotification(errorMessage, 'error');
         } else {
-          showNotification(error.response.data.message || 'Failed to save course', 'error');
+          showNotification(error.response.data.message || 'Failed to save order', 'error');
         }
       } else {
-        showNotification('Failed to save course', 'error');
+        showNotification('Failed to save order', 'error');
       }
       throw error;
     } finally {
       setSubmitting(false);
     }
-  }, [fetchCourses]);
+  }, [fetchOrders, fetchDashboardData, orderData.current_page]);
 
-  const handleDeleteCourse = useCallback(async () => {
+  const handleDeleteOrder = useCallback(async () => {
     if (!deleteItemId) return;
 
     try {
       setDeleting(true);
       const token = Cookies.get('token');
-
       if (!token) {
         showNotification('Authentication required', 'error');
         return;
       }
 
-      await Api.delete(`/api/admin/courses/${deleteItemId}`, {
+      await Api.delete(`/api/admin/orders/${deleteItemId}`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`
@@ -1076,28 +888,28 @@ const AdminCourse = () => {
         return newData;
       });
 
-      showNotification('Course deleted successfully');
+      showNotification('Order deleted successfully');
       setDeleteItemId(null);
       setDeleteModalOpen(false);
-      fetchCourses(courseData.current_page);
+      fetchOrders(orderData.current_page);
     } catch (error) {
-      console.error('Error deleting course:', error);
-      showNotification('Failed to delete course', 'error');
+      console.error('Error deleting order:', error);
+      showNotification('Failed to delete order', 'error');
     } finally {
       setDeleting(false);
     }
-  }, [deleteItemId, fetchCourses, courseData.current_page]);
+  }, [deleteItemId, fetchOrders, orderData.current_page]);
 
   const resetFilters = useCallback(() => {
     setSearchTerm('');
-    setStatusFilter('all');
+    setPaymentFilter('all');
   }, []);
 
   const handlePageChange = useCallback(async (page) => {
     if (page === '...') return;
-    if (page === courseData.current_page) return;
-    await fetchCourses(page);
-  }, [courseData.current_page, fetchCourses]);
+    if (page === orderData.current_page) return;
+    await fetchOrders(page);
+  }, [orderData.current_page, fetchOrders]);
 
   const openAddModal = useCallback(() => {
     setEditingId(null);
@@ -1136,16 +948,16 @@ const AdminCourse = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Courses Management</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Orders Management</h2>
             <p className="text-gray-500 text-sm mt-1">
-              Manage training programs, schedules, and availability.
+              Manage user orders, payments, and certificates.
             </p>
           </div>
           <button
             onClick={openAddModal}
             className="px-5 py-2.5 rounded-xl font-semibold bg-[#0F52BA] text-white hover:bg-[#0B3D8C] transition-colors shadow-sm shadow-[#0F52BA]/20 flex items-center gap-2 cursor-pointer"
           >
-            <Plus className="size-5" /> Add New Course
+            <Plus className="size-5" /> Add New Order
           </button>
         </div>
 
@@ -1153,43 +965,44 @@ const AdminCourse = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {loading ? (
             <>
-              <StatCardSkeleton icon={BookOpen} title="Total Courses" />
-              <StatCardSkeleton icon={CheckCircle} title="Missed Courses" iconBg="bg-green-500/10" iconColor="text-green-500" />
-              <StatCardSkeleton icon={CalendarClock} title="Upcoming Courses" iconBg="bg-yellow-500/10" iconColor="text-yellow-500" />
-              <StatCardSkeleton icon={Users} title="Total Orders" />
+              <StatCardSkeleton icon={BookOpen} title="Total Orders" />
+              <StatCardSkeleton icon={CheckCircle} title="Pay Now" iconBg="bg-green-500/10" iconColor="text-green-500" />
+              <StatCardSkeleton icon={CalendarClock} title="Pay Later" iconBg="bg-yellow-500/10" iconColor="text-yellow-500" />
+              <StatCardSkeleton icon={AlertTriangle} title="Missed" iconBg="bg-red-500/10" iconColor="text-red-500" />
             </>
           ) : (
             <>
               <StatCard
                 icon={BookOpen}
-                title="Total Courses"
-                value={courses}
+                title="Total Orders"
+                value={totalOrders}
                 subtitle="+12%"
                 subtitleColor="text-green-500 bg-green-500/10 px-2 py-1 rounded-md"
               />
               <StatCard
                 icon={CheckCircle}
-                title="Missed Courses"
-                value={missed}
-                subtitle="Currently active"
+                title="Pay Now"
+                value={payNowCount}
+                subtitle="Paid"
                 iconBg="bg-green-500/10"
                 iconColor="text-green-500"
               />
               <StatCard
                 icon={CalendarClock}
-                title="Upcoming Courses"
-                value={upcoming}
-                subtitle="Next 30 days"
+                title="Pay Later"
+                value={payLaterCount}
+                subtitle="Pending"
                 iconBg="bg-yellow-500/10"
                 iconColor="text-yellow-500"
               />
-              {/* <StatCard
-                icon={Users}
-                title="Total Orders"
-                value={orders}
-                subtitle="+5%"
-                subtitleColor="text-green-500 bg-green-500/10 px-2 py-1 rounded-md"
-              /> */}
+              <StatCard
+                icon={AlertTriangle}
+                title="Missed"
+                value={missedCount}
+                subtitle="Expired"
+                iconBg="bg-red-500/10"
+                iconColor="text-red-500"
+              />
             </>
           )}
         </div>
@@ -1202,22 +1015,22 @@ const AdminCourse = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search courses by name or ID..."
+              placeholder="Search orders by course or user ID..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F52BA]/20 focus:border-[#0F52BA] transition-all text-sm"
             />
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value)}
               className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#0F52BA]/20 focus:border-[#0F52BA] text-sm font-medium min-w-[130px] cursor-pointer transition-all"
             >
-              <option value="all">All Status</option>
-              <option value="available">Available</option>
-              <option value="upcoming">Upcoming</option>
-              <option value="missed">Missed</option>  {/* ✅ Diperbaiki */}
+              <option value="all">All Payment</option>
+              <option value="pay_now">Pay now</option>
+              <option value="pay_later">Pay later</option>
+              <option value="missed">Missed</option>
             </select>
-            {(searchTerm || statusFilter !== 'all') && (
+            {(searchTerm || paymentFilter !== 'all') && (
               <button
                 onClick={resetFilters}
                 className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -1235,13 +1048,13 @@ const AdminCourse = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">
-                    Course Details
+                    Order Details
                   </th>
                   <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                    Schedule
+                    User / Certificate
                   </th>
                   <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">
-                    Status
+                    Payment Option
                   </th>
                   <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider text-right">
                     Actions
@@ -1255,7 +1068,7 @@ const AdminCourse = () => {
                   ))
                 ) : filteredItems.length > 0 ? (
                   filteredItems.map(([id, data]) => (
-                    <CourseTableRow
+                    <OrderTableRow
                       key={id}
                       id={id}
                       data={data}
@@ -1269,7 +1082,7 @@ const AdminCourse = () => {
                     <td colSpan="4" className="p-8 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Search className="size-8 text-gray-400" />
-                        <p className="text-gray-500">No courses found</p>
+                        <p className="text-gray-500">No orders found</p>
                         <button
                           onClick={resetFilters}
                           className="text-[#0F52BA] text-sm hover:underline"
@@ -1287,14 +1100,14 @@ const AdminCourse = () => {
           {!tableLoading && filteredItems.length > 0 && (
             <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white">
               <p className="text-sm text-gray-500">
-                Showing <span className="font-medium text-gray-900">{courseData.from || 1}</span> to{' '}
-                <span className="font-medium text-gray-900">{courseData.to || filteredCount}</span> of{' '}
-                <span className="font-medium text-gray-900">{courseData.total || Object.keys(itemsData).length}</span> entries
+                Showing <span className="font-medium text-gray-900">{orderData.from || 1}</span> to{' '}
+                <span className="font-medium text-gray-900">{orderData.to || filteredCount}</span> of{' '}
+                <span className="font-medium text-gray-900">{orderData.total || Object.keys(itemsData).length}</span> entries
               </p>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => handlePageChange(courseData.current_page - 1)}
-                  disabled={courseData.current_page <= 1 || tableLoading}
+                  onClick={() => handlePageChange(orderData.current_page - 1)}
+                  disabled={orderData.current_page <= 1 || tableLoading}
                   className="size-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
                 >
                   <ChevronLeft className="size-4" />
@@ -1305,7 +1118,7 @@ const AdminCourse = () => {
                     key={index}
                     onClick={() => handlePageChange(page)}
                     disabled={page === '...' || tableLoading}
-                    className={`size-8 flex items-center justify-center rounded-lg font-medium text-sm cursor-pointer transition-colors ${page === courseData.current_page
+                    className={`size-8 flex items-center justify-center rounded-lg font-medium text-sm cursor-pointer transition-colors ${page === orderData.current_page
                         ? 'bg-[#0F52BA] text-white shadow-sm shadow-[#0F52BA]/20'
                         : page === '...'
                           ? 'text-gray-500 cursor-default'
@@ -1317,8 +1130,8 @@ const AdminCourse = () => {
                 ))}
 
                 <button
-                  onClick={() => handlePageChange(courseData.current_page + 1)}
-                  disabled={courseData.current_page >= courseData.last_page || tableLoading}
+                  onClick={() => handlePageChange(orderData.current_page + 1)}
+                  disabled={orderData.current_page >= orderData.last_page || tableLoading}
                   className="size-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
                 >
                   <ChevronLeft className="size-4 rotate-180" />
@@ -1333,7 +1146,7 @@ const AdminCourse = () => {
       <FormModal
         isOpen={formModalOpen}
         onClose={() => { setFormModalOpen(false); setEditingId(null); }}
-        onSave={handleSaveCourse}
+        onSave={handleSaveOrder}
         editingId={editingId}
         itemsData={itemsData}
         isLoading={submitting}
@@ -1351,11 +1164,11 @@ const AdminCourse = () => {
       <DeleteModal
         isOpen={deleteModalOpen}
         onClose={() => { setDeleteModalOpen(false); setDeleteItemId(null); }}
-        onConfirm={handleDeleteCourse}
+        onConfirm={handleDeleteOrder}
         isLoading={deleting}
       />
     </AdminLayout>
   );
 };
 
-export default AdminCourse;
+export default AdminOrder;

@@ -5,6 +5,11 @@ import PrivateRoutes from "./PrivateRoutes";
 import AdminDasboard from "../layouts/admin/Dashboard";
 import AdminCourse from "../layouts/admin/Courses";
 import DetailCourse from "../layouts/admin/DetailCourse";
+import AdminOrder from "../layouts/admin/Order";
+import Homepage from "../layouts/customer/homepage";
+import Register from "../layouts/customer/Register";
+import Login from "../layouts/customer/Login";
+import Forbidden from "../layouts/forbidden";
 
 //======================================================
 // view admin
@@ -17,22 +22,31 @@ export default function RoutesIndex() {
   return (
     <Routes>
       {/* route "/login" */}
-      <Route path="/admin/login" element={<AdminLogin/>} />
+      <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/dashboard" element={
         <PrivateRoutes>
-            <AdminDasboard/>
+          <AdminDasboard />
         </PrivateRoutes>
-      }/>
+      } />
       <Route path="/admin/courses" element={
         <PrivateRoutes>
-            <AdminCourse/>
+          <AdminCourse />
         </PrivateRoutes>
-      }/>
+      } />
+      <Route path="/admin/orders" element={
+        <PrivateRoutes>
+          <AdminOrder />
+        </PrivateRoutes>
+      } />
       <Route path="/admin/courses/:slug" element={
         <PrivateRoutes>
-            <DetailCourse/>
+          <DetailCourse />
         </PrivateRoutes>
-      }/>
+      } />
+      <Route path="/" element={<Homepage/>}/>
+      <Route path="/register" element={<Register/>}/>
+      <Route path="/login" element={<Login/>}/>
+      <Route path="/forbidden" element={<Forbidden/>}/>
     </Routes>
   );
 }
