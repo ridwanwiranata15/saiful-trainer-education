@@ -167,7 +167,7 @@ const Homepage = () => {
                 <span className="inline-block bg-amber-100/80 text-amber-800 text-xs font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full mb-3 backdrop-blur-sm">
                   Lead Facilitator
                 </span>
-                <h2 className="text-3xl md:text-4xl font-bold text-slate-800">Ridwan Wiranata, S.Tr, kom, M.Kom, Phd</h2>
+                <h2 className="text-3xl md:text-4xl font-bold text-slate-800">Ridwan Wiranata, S.Tr, kom, M.Kom, Ph.d, Sp.Ak</h2>
                 <p className="text-amber-600 font-medium text-lg mt-1">Praktisi Pendidikan & Konsultan Manajemen Yayasan</p>
                 <ul className="mt-5 space-y-2.5 text-slate-600">
                   <li className="flex items-center gap-3 justify-center md:justify-start">

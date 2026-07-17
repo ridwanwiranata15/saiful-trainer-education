@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
     Folder,
@@ -292,10 +292,12 @@ const DetailCourseCustomer = () => {
                             </div>
 
                             <div className="mt-6 pt-4 border-t border-dashed border-gray-200">
-                                <button className="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-lg">
+                                <Link to={`/course/detail/${course.slug}/order`}>
+                                    <button className="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-lg cursor-pointer">
                                     <Rocket className="w-5 h-5" />
                                     Daftar Sekarang
                                 </button>
+                                </Link>
                                 <p className="text-xs text-gray-400 text-center mt-3">
                                     *Sertifikat digital + akses rekaman 30 hari
                                 </p>

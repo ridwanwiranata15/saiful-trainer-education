@@ -11,6 +11,8 @@ import Register from "../layouts/customer/Register";
 import Login from "../layouts/customer/Login";
 import Forbidden from "../layouts/forbidden";
 import DetailCourseCustomer from "../layouts/customer/detailCourse";
+import PrivateRoutesCustomer from "../layouts/customer/PrivateRoute";
+import OrderCourse from "../layouts/customer/Order";
 
 //======================================================
 // view admin
@@ -44,11 +46,17 @@ export default function RoutesIndex() {
           <DetailCourse />
         </PrivateRoutes>
       } />
-      <Route path="/" element={<Homepage/>}/>
-      <Route path="/register" element={<Register/>}/>
-      <Route path="/login" element={<Login/>}/>
-      <Route path="/forbidden" element={<Forbidden/>}/>
-      <Route path="/course/detail/:slug" element={<DetailCourseCustomer/>}/>
+      <Route path="/" element={<Homepage />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/forbidden" element={<Forbidden />} />
+      <Route path="/course/detail/:slug" element={<DetailCourseCustomer />} />
+      <Route path="/course/detail/:slug/order" element={
+        <PrivateRoutesCustomer>
+          <OrderCourse />
+        </PrivateRoutesCustomer>
+      } />
+
     </Routes>
   );
 }
