@@ -10,6 +10,7 @@ import Homepage from "../layouts/customer/homepage";
 import Register from "../layouts/customer/Register";
 import Login from "../layouts/customer/Login";
 import Forbidden from "../layouts/forbidden";
+import DetailCourseCustomer from "../layouts/customer/detailCourse";
 
 //======================================================
 // view admin
@@ -47,6 +48,7 @@ export default function RoutesIndex() {
       <Route path="/register" element={<Register/>}/>
       <Route path="/login" element={<Login/>}/>
       <Route path="/forbidden" element={<Forbidden/>}/>
+      <Route path="/course/detail/:slug" element={<DetailCourseCustomer/>}/>
     </Routes>
   );
 }

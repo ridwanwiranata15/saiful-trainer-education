@@ -1,64 +1,68 @@
 import { ArrowRight, Lock, GraduationCap, Star, Eye, Mail, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import AuthController from "../../controllers/AuthController";
+import Api from "../../services/Api";
 import { Quote } from "lucide-react";
 
 const AdminLogin = () => {
-    document.title = "Sign in - saiful training"
+    document.title = "Sign in - Saiful Training";
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [isFocused, setIsFocused] = useState({ email: false, password: false });
+    const navigate = useNavigate();
 
     // Check if already logged in
     if (Cookies.get("token")) {
         return <Navigate to="/admin/dashboard" replace />;
-    }
-
+    } 
     const handleLogin = async (e) => {
         e.preventDefault();
-        
-        // Reset error
         setError("");
-        
+
         // Validate inputs
         if (!email || !password) {
             setError("Please fill in all fields");
             return;
         }
 
-        // Simple email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             setError("Please enter a valid email address");
             return;
         }
-
         setIsLoading(true);
-
-        try {
-            const response = await AuthController.login(email, password);
-            
-            // Check if login was successful
-            if (response && response.token) {
-                // Redirect will happen automatically due to the check above
-                window.location.href = "/admin/dashboard";
-            } else {
-                setError(response?.message || "Login failed. Please try again.");
-            }
-        } catch (err) {
-            setError(err?.response?.data?.message || "An error occurred during login. Please try again.");
-        } finally {
-            setIsLoading(false);
+        const response = await Api.post('/api/login', {
+            email,
+            password
+        });
+        setIsLoading(false)
+        const { user, token, permissions } = response.data;
+        const customerPermissions = {
+            "orders.create": true,
+            "orders.edit": true,
+            "orders.index": true,
+        };
+        const isCustomer = Object.keys(permissions).every(
+            (key) =>
+                customerPermissions.hasOwnProperty(key) &&
+                customerPermissions[key] === permissions[key]
+        );
+        if(isCustomer){
+           return setError("Mohon maaf, akun yang Anda gunakan tidak memiliki izin untuk mengakses area Admin. Silakan lanjutkan menggunakan fitur yang tersedia pada akun Anda.")
+        }else{
+            Cookies.set("token", token);
+            Cookies.set("user", JSON.stringify(user));
+            Cookies.set("permissions", JSON.stringify(permissions));
+            navigate('/admin/dashborad');
         }
     };
 
     const togglePasswordVisibility = () => {
-        setShowPassword(!showPassword);
+        setShowPassword((prev) => !prev);
     };
 
     return (
@@ -92,12 +96,14 @@ const AdminLogin = () => {
                                 <label htmlFor="inputEmail" className="text-sm font-semibold text-gray-900 block">
                                     Email Address
                                 </label>
-                                <div className={`relative group transition-all duration-200 ${
-                                    isFocused.email ? 'ring-2 ring-[#0F52BA]/20' : ''
-                                }`}>
-                                    <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${
-                                        isFocused.email ? 'text-[#0F52BA]' : 'text-gray-500'
-                                    }`} />
+                                <div
+                                    className={`relative group transition-all duration-200 ${isFocused.email ? "ring-2 ring-[#0F52BA]/20" : ""
+                                        }`}
+                                >
+                                    <Mail
+                                        className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${isFocused.email ? "text-[#0F52BA]" : "text-gray-500"
+                                            }`}
+                                    />
                                     <input
                                         type="email"
                                         id="inputEmail"
@@ -107,8 +113,8 @@ const AdminLogin = () => {
                                         className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#0F52BA] outline-none transition-all text-gray-900 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        onFocus={() => setIsFocused({ ...isFocused, email: true })}
-                                        onBlur={() => setIsFocused({ ...isFocused, email: false })}
+                                        onFocus={() => setIsFocused((prev) => ({ ...prev, email: true }))}
+                                        onBlur={() => setIsFocused((prev) => ({ ...prev, email: false }))}
                                     />
                                 </div>
                             </div>
@@ -119,20 +125,22 @@ const AdminLogin = () => {
                                     <label htmlFor="inputPassword" className="text-sm font-semibold text-gray-900 block">
                                         Password
                                     </label>
-                                    <a 
-                                        href="#" 
+                                    <a
+                                        href="#"
                                         className="text-sm text-[#0F52BA] font-medium hover:text-[#0B3D8C] transition-colors"
                                         onClick={(e) => e.preventDefault()}
                                     >
                                         Forgot password?
                                     </a>
                                 </div>
-                                <div className={`relative group transition-all duration-200 ${
-                                    isFocused.password ? 'ring-2 ring-[#0F52BA]/20' : ''
-                                }`}>
-                                    <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${
-                                        isFocused.password ? 'text-[#0F52BA]' : 'text-gray-500'
-                                    }`} />
+                                <div
+                                    className={`relative group transition-all duration-200 ${isFocused.password ? "ring-2 ring-[#0F52BA]/20" : ""
+                                        }`}
+                                >
+                                    <Lock
+                                        className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${isFocused.password ? "text-[#0F52BA]" : "text-gray-500"
+                                            }`}
+                                    />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         id="inputPassword"
@@ -142,8 +150,8 @@ const AdminLogin = () => {
                                         className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#0F52BA] outline-none transition-all text-gray-900 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        onFocus={() => setIsFocused({ ...isFocused, password: true })}
-                                        onBlur={() => setIsFocused({ ...isFocused, password: false })}
+                                        onFocus={() => setIsFocused((prev) => ({ ...prev, password: true }))}
+                                        onBlur={() => setIsFocused((prev) => ({ ...prev, password: false }))}
                                     />
                                     <button
                                         type="button"
@@ -184,7 +192,7 @@ const AdminLogin = () => {
                         {/* Footer Link */}
                         <div className="mt-8 text-center">
                             <p className="text-sm text-gray-500">
-                                Need access?{' '}
+                                Need access?{" "}
                                 <a href="#" className="text-[#0F52BA] font-medium hover:underline">
                                     Contact System Administrator
                                 </a>
@@ -195,39 +203,30 @@ const AdminLogin = () => {
 
                 {/* Right Panel - Hero/Testimonial */}
                 <div className="hidden lg:block lg:w-1/2 relative bg-gray-900 overflow-hidden">
-                    {/* Background Image */}
                     <img
                         src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?q=80&w=2025&auto=format&fit=crop"
                         alt="Luxury Car Interior"
                         className="absolute inset-0 w-full h-full object-cover opacity-90"
                     />
-
-                    {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
-                    {/* Testimonial Card */}
                     <div className="absolute bottom-16 left-12 right-12 xl:right-auto xl:w-[420px] bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20 transform transition-transform duration-500 hover:-translate-y-2">
-                        {/* Star Ratings */}
                         <div className="flex items-center gap-1 mb-4">
                             {[...Array(5)].map((_, i) => (
                                 <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                             ))}
                         </div>
-
-                        {/* Testimonial Text */}
                         <p className="text-gray-900 font-medium text-lg leading-relaxed mb-6">
-                            "The Saiful Trainer Management system has completely revolutionized 
-                            how we onboard and track our sales team. It's clean, fast, and 
+                            "The Saiful Trainer Management system has completely revolutionized
+                            how we onboard and track our sales team. It's clean, fast, and
                             incredibly intuitive."
                         </p>
-
-                        {/* Reviewer Info */}
                         <div className="flex items-center gap-4">
                             <div className="relative">
-                                <img 
-                                    src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop" 
-                                    alt="Reviewer" 
-                                    className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-sm" 
+                                <img
+                                    src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop"
+                                    alt="Reviewer"
+                                    className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-sm"
                                 />
                                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                             </div>
@@ -236,8 +235,6 @@ const AdminLogin = () => {
                                 <p className="text-sm text-gray-500">Regional Director, AutoDeals</p>
                             </div>
                         </div>
-
-                        {/* Quote Icon */}
                         <Quote className="absolute top-6 right-6 w-12 h-12 text-gray-200/50 rotate-180" />
                     </div>
                 </div>

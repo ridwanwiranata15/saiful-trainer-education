@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Api from '../../services/Api';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
 const Register = () => {
@@ -182,7 +182,7 @@ const Register = () => {
           </form>
 
           <p className="text-center text-gray-500 text-sm mt-6">
-            Sudah punya akun? <a href="login.html" className="text-amber-700 font-semibold hover:underline">Masuk di sini</a>
+            Sudah punya akun? <Link to={"/login"} className="text-amber-700 font-semibold hover:underline">Masuk di sini</Link>
           </p>
         </div>
       </div>

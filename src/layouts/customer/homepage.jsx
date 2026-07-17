@@ -15,6 +15,7 @@ import {
   Shield,
 } from "lucide-react";
 import Api from "../../services/Api";
+import Header from "./header";
 
 const Homepage = () => {
   document.title = "Saiful Training - pelatihan pendidik dan pengelola yayasan";
@@ -93,53 +94,7 @@ const Homepage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50/30 font-sans antialiased">
       {/* Navbar – ultra glass */}
-      <header className="sticky top-0 z-50 bg-white/40 backdrop-blur-2xl border-b border-white/30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-600 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-200/50 group-hover:scale-105 transition-transform duration-300">
-              <span className="text-white font-extrabold text-xl tracking-tight">S</span>
-            </div>
-            <span className="text-2xl font-black tracking-tight text-slate-800">
-              SAIFUL{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-500">
-                TRAINING
-              </span>
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-4">
-            {Cookies.get("token") ? (
-              <Link
-                to="/profile"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 border border-slate-100/50 hover:border-amber-200/70 group"
-              >
-                {user?.photo ? (
-                  <img
-                    src={user.photo}
-                    alt="profile"
-                    className="w-8 h-8 rounded-full object-cover ring-2 ring-amber-200/70"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-200 text-amber-700 flex items-center justify-center text-xs font-bold">
-                    {getInitials(user?.name)}
-                  </div>
-                )}
-                <span className="text-sm font-medium text-slate-700 group-hover:text-amber-700 transition-colors">
-                  Profile
-                </span>
-              </Link>
-            ) : (
-              <Link
-                to="/login"
-                className="flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-gradient-to-r from-amber-600 to-orange-500 hover:shadow-lg hover:shadow-amber-200/50 text-white font-semibold transition-all duration-300 hover:scale-105"
-              >
-                <LogIn className="w-4 h-4" />
-                Masuk
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header/>
 
       <main>
         {/* Hero – modern with floating shapes */}
@@ -212,7 +167,7 @@ const Homepage = () => {
                 <span className="inline-block bg-amber-100/80 text-amber-800 text-xs font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full mb-3 backdrop-blur-sm">
                   Lead Facilitator
                 </span>
-                <h2 className="text-3xl md:text-4xl font-bold text-slate-800">Saiful Anwar, M.Pd., Ph.D.</h2>
+                <h2 className="text-3xl md:text-4xl font-bold text-slate-800">Ridwan Wiranata, S.Tr, kom, M.Kom, Phd</h2>
                 <p className="text-amber-600 font-medium text-lg mt-1">Praktisi Pendidikan & Konsultan Manajemen Yayasan</p>
                 <ul className="mt-5 space-y-2.5 text-slate-600">
                   <li className="flex items-center gap-3 justify-center md:justify-start">
@@ -274,7 +229,7 @@ const Homepage = () => {
                       </span>
                       <div className="absolute top-4 right-4">
                         <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md backdrop-blur-sm">
-                          ✨ {course.status}
+                           {course.status}
                         </span>
                     
                     </div>
@@ -298,12 +253,12 @@ const Homepage = () => {
                       </div>
                       <div className="mt-5 flex items-center justify-between">
                         <span className="text-amber-700 font-bold text-lg">{course.price}</span>
-                        <a
-                          href="/detail"
+                        <Link
+                          to={`/course/detail/${course.slug}`}
                           className="text-sm bg-gradient-to-r from-amber-600 to-orange-500 hover:shadow-lg hover:shadow-amber-200/50 text-white px-5 py-2.5 rounded-full shadow transition-all duration-200 hover:scale-105"
                         >
                           Detail
-                        </a>
+                        </Link>
                       </div>
                     </div>
                   </div>

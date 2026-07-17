@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import Api from '../../services/Api';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
 const Login = () => {
-    document.title = "Sign Up - Saiful Trainer Consulting"
+    document.title = "Sign In - Saiful Trainer Consulting"
     // State for form fields
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -131,7 +131,7 @@ const Login = () => {
                             className="w-full bg-amber-700 hover:bg-amber-800 text-white font-semibold py-2.5 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-70"
                         >
                             <i data-lucide="user-plus" className="w-5 h-5"></i>
-                            {loading ? 'Mendaftar...' : 'Daftar Sekarang'}
+                            {loading ? 'Memuat...' : 'Masuk Sekarang'}
                         </button>
 
                         {/* Pesan sukses/error */}
@@ -148,7 +148,7 @@ const Login = () => {
                     </form>
 
                     <p className="text-center text-gray-500 text-sm mt-6">
-                        Sudah punya akun? <a href="login.html" className="text-amber-700 font-semibold hover:underline">Masuk di sini</a>
+                        Belum punya akun? <Link to={"/register"} className="text-amber-700 font-semibold hover:underline">Daftar di sini</Link>
                     </p>
                 </div>
             </div>
