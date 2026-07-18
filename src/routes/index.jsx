@@ -14,6 +14,7 @@ import DetailCourseCustomer from "../layouts/customer/detailCourse";
 import PrivateRoutesCustomer from "../layouts/customer/PrivateRoute";
 import OrderCourse from "../layouts/customer/Order";
 import PaymentSuccess from "../layouts/customer/PaymentSuccess";
+import MyProfile from "../layouts/customer/Profile";
 
 //======================================================
 // view admin
@@ -60,6 +61,11 @@ export default function RoutesIndex() {
       <Route path="/course/detail/:slug/order/payment/success" element={
         <PrivateRoutesCustomer>
           <PaymentSuccess/>
+        </PrivateRoutesCustomer>
+      } />
+      <Route path="/profile" element={
+        <PrivateRoutesCustomer>
+          <MyProfile/>
         </PrivateRoutesCustomer>
       } />
 
