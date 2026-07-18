@@ -16,6 +16,7 @@ import {
 import { useParams } from "react-router-dom";
 import Api from "../../services/Api";
 import Cookies from "js-cookie";
+import toast from "react-hot-toast";
 
 const OrderCourse = () => {
     const { slug } = useParams();
@@ -185,7 +186,7 @@ const OrderCourse = () => {
 
         try {
             // Kirim data ke server
-            const response = await Api.post("/api/admin/orders", formData, {
+            const response = await Api.post("/api/order", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                     "Authorization":`Bearer ${token}`
@@ -193,12 +194,14 @@ const OrderCourse = () => {
                 },
             });
             // Handle sukses, misal redirect ke halaman sukses
-            alert("Pesanan berhasil! Silakan cek email untuk konfirmasi.");
-            window.location.href = "/paymentsuccess";
+            // alert("Pesanan berhasil! Silakan cek email untuk konfirmasi.");
+            toast.success("Pesanan berhasil! Silakan cek email untuk konfirmasi.");
+            window.location.href = `/course/detail/${course.slug}/order/payment/success`;
+            // console.log(response);
             // console.log(orderData);
         } catch (err) {
             alert("Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.");
-            console.error("Error creating order:", err);
+            console.error("Error creating order:", err.response);
         }
     };
 
