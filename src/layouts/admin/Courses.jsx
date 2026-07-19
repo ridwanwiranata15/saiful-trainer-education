@@ -348,10 +348,10 @@ const FormModal = ({ isOpen, onClose, onSave, editingId, itemsData, isLoading })
   const handleFileChange = (field, e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        setErrors({ ...errors, [field]: 'File size must be less than 10MB' });
-        return;
-      }
+      // if (file.size > 10 * 1024 * 1024) {
+      //   setErrors({ ...errors, [field]: 'File size must be less than 10MB' });
+      //   return;
+      // }
       setFormData({ ...formData, [field]: file });
       setErrors({ ...errors, [field]: null });
     } else {
@@ -922,6 +922,7 @@ const AdminCourse = () => {
           Authorization: `Bearer ${token}`
         }
       });
+      console.log(response);
 
       if (response.data && response.data.data) {
         const responseData = response.data.data;

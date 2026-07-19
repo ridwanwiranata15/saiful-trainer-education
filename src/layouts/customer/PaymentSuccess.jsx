@@ -11,6 +11,7 @@ import {
   CheckCircle,
   LayoutDashboard,
   Home,
+  Loader2, // <-- added
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
@@ -31,7 +32,6 @@ const PaymentSuccess = () => {
         const response = await Api.get(`/api/courses/${slug}`, {
           headers: { Accept: "application/json" },
         });
-        // Asumsikan response.data.data adalah array, ambil elemen pertama
         const courseData = response.data.data?.[0] || null;
         setCourse(courseData);
         setOrder(courseData?.orders?.[0] || null);
@@ -83,11 +83,16 @@ const PaymentSuccess = () => {
     }
   };
 
-  // Jika loading, tampilkan indikator
+  // Improved loading UI
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-5 sm:px-8 py-12 md:py-20 text-center">
-        <p className="text-gray-600">Memuat data pembayaran...</p>
+      <div className="max-w-4xl mx-auto px-5 sm:px-8 py-12 md:py-20">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-12 h-12 text-amber-600 animate-spin" />
+          <p className="mt-4 text-gray-600 font-medium">
+            Memuat data pembayaran...
+          </p>
+        </div>
       </div>
     );
   }
@@ -96,12 +101,18 @@ const PaymentSuccess = () => {
   if (error || !course || !order) {
     return (
       <div className="max-w-4xl mx-auto px-5 sm:px-8 py-12 md:py-20 text-center">
-        <p className="text-red-600">
-          {error || "Data pembayaran tidak ditemukan."}
-        </p>
-        <Link to="/" className="text-amber-700 hover:underline mt-4 inline-block">
-          Kembali ke Beranda
-        </Link>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-8">
+          <div className="text-red-600 text-5xl mb-4">😕</div>
+          <h2 className="text-xl font-bold text-red-700 mb-2">
+            {error || "Data pembayaran tidak ditemukan."}
+          </h2>
+          <Link
+            to="/"
+            className="inline-block bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors mt-4"
+          >
+            Kembali ke Beranda
+          </Link>
+        </div>
       </div>
     );
   }

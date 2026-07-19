@@ -12,6 +12,7 @@ import {
     CreditCard,
     UploadCloud,
     Eye,
+    Loader2, // <-- added for spinners
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import Api from "../../services/Api";
@@ -32,6 +33,7 @@ const OrderCourse = () => {
     const [showUploadForm, setShowUploadForm] = useState(false);
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [submitting, setSubmitting] = useState(false); // <-- new state for button loading
 
     // State untuk data order
     const [orderData, setOrderData] = useState({
@@ -162,17 +164,19 @@ const OrderCourse = () => {
         // Validasi
         const token = Cookies.get('token');
         if (!isChecked) {
-            alert("Silakan centang paket tambahan terlebih dahulu.");
+            toast.error("Silakan centang paket tambahan terlebih dahulu.");
             return;
         }
         if (!paymentChoice) {
-            alert("Silakan pilih metode pembayaran (Bayar Sekarang atau Bayar Nanti).");
+            toast.error("Silakan pilih metode pembayaran (Bayar Sekarang atau Bayar Nanti).");
             return;
         }
         if (paymentChoice === "sekarang" && !file) {
-            alert("Harap upload bukti pembayaran.");
+            toast.error("Harap upload bukti pembayaran.");
             return;
         }
+
+        setSubmitting(true); // <-- start loading
 
         // Siapkan FormData untuk upload file
         const formData = new FormData();
@@ -190,18 +194,15 @@ const OrderCourse = () => {
                 headers: {
                     "Content-Type": "multipart/form-data",
                     "Authorization":`Bearer ${token}`
-
                 },
             });
-            // Handle sukses, misal redirect ke halaman sukses
-            // alert("Pesanan berhasil! Silakan cek email untuk konfirmasi.");
             toast.success("Pesanan berhasil! Silakan cek email untuk konfirmasi.");
             window.location.href = `/course/detail/${course.slug}/order/payment/success`;
-            // console.log(response);
-            // console.log(orderData);
         } catch (err) {
-            alert("Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.");
+            toast.error("Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.");
             console.error("Error creating order:", err.response);
+        } finally {
+            setSubmitting(false); // <-- stop loading
         }
     };
 
@@ -241,12 +242,34 @@ const OrderCourse = () => {
         }
     };
 
+    // Improved loading UI
     if (loading) {
-        return <div className="text-center py-10">Loading...</div>;
+        return (
+            <>
+                <Header />
+                <main className="max-w-6xl mx-auto px-5 sm:px-8 py-8 md:py-12">
+                    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                        <Loader2 className="w-12 h-12 text-amber-600 animate-spin" />
+                        <p className="mt-4 text-gray-600 font-medium">Memuat halaman pemesanan...</p>
+                    </div>
+                </main>
+            </>
+        );
     }
 
     if (error) {
-        return <div className="text-center py-10 text-red-500">{error}</div>;
+        return (
+            <>
+                <Header />
+                <main className="max-w-6xl mx-auto px-5 sm:px-8 py-8 md:py-12">
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+                        <div className="text-red-600 text-5xl mb-4">😕</div>
+                        <h2 className="text-xl font-bold text-red-700 mb-2">Gagal memuat data</h2>
+                        <p className="text-red-600">{error}</p>
+                    </div>
+                </main>
+            </>
+        );
     }
 
     return (
@@ -422,12 +445,23 @@ const OrderCourse = () => {
                                 </div>
                             )}
 
-                            {/* Tombol Daftar */}
+                            {/* Tombol Daftar with loading state */}
                             <button
                                 onClick={handleDaftar}
-                                className="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-lg mt-6"
+                                disabled={submitting}
+                                className="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-lg mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                <CreditCard className="w-5 h-5" /> Daftar sekarang
+                                {submitting ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Memproses...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CreditCard className="w-5 h-5" />
+                                        Daftar sekarang
+                                    </>
+                                )}
                             </button>
                             <p className="text-xs text-gray-400 text-center mt-3">
                                 *Centang paket tambahan untuk melanjutkan

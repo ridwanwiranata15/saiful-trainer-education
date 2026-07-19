@@ -2,6 +2,8 @@ import { useState } from 'react';
 import Api from '../../services/Api';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import { EyeOff } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 const Register = () => {
     document.title = "Sign Up - Saiful Trainer Consulting"
@@ -13,6 +15,7 @@ const Register = () => {
   const [preview, setPreview] = useState(null);    // Image URL for preview
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [showPassword, setShowPassword] = useState(false); // NEW: toggle state
   const navigate = useNavigate();
 
   // Handle file selection and preview
@@ -79,8 +82,6 @@ const Register = () => {
             </div>
           </div>
 
-          
-
           <form className="mt-6 space-y-4" onSubmit={handleRegister}>
             {/* Nama Lengkap */}
             <div>
@@ -119,19 +120,30 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Password */}
+            {/* Password with Show/Hide Toggle */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <div className="relative">
                 <i data-lucide="lock" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition"
+                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition"
                   placeholder="Minimal 6 karakter"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5"/>
+                  ) : (
+                    <Eye className="w-5 h-5"/>
+                  )}
+                </button>
               </div>
             </div>
 

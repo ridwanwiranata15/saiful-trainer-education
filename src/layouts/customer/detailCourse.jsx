@@ -22,6 +22,7 @@ import {
     Flame,
     Gift,
     Loader2,
+    Check, // <-- added Check icon
 } from "lucide-react";
 import Header from "./header";
 import Api from "../../services/Api";
@@ -233,7 +234,7 @@ const DetailCourseCustomer = () => {
                                             className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-amber-50 transition-colors group"
                                         >
                                             <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 group-hover:bg-amber-200 transition-colors">
-                                                <Folder className="w-4 h-4" />
+                                                <Check className="w-4 h-4" /> {/* Changed from Folder to Check */}
                                             </div>
                                             <span className="font-medium text-gray-800">
                                                 {learning.learning_list}

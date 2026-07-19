@@ -150,7 +150,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogout }) => {
           <NavItem icon={LayoutDashboard} label="Dashboard" active={false} path={'/admin/dashboard'}/>
           <NavItem icon={BookOpen} label="Courses" active={false} path={'/admin/courses'}/>
           
-          <NavItem icon={ShoppingBag} label="Orders" active={false} />
+          <NavItem icon={ShoppingBag} label="Orders" active={false} path={'/admin/orders'}/>
         </nav>
 
         {/* Logout Button */}
