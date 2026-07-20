@@ -40,7 +40,7 @@ const OrderCourse = () => {
         course_id: null,
         user_id: null,
         is_certificate: 0,
-        payment_option: '',
+        payment_option: 'pay_later',
         payment_proof: null, // akan berisi file object
     });
 
@@ -163,18 +163,18 @@ const OrderCourse = () => {
     const handleDaftar = async () => {
         // Validasi
         const token = Cookies.get('token');
-        if (!isChecked) {
-            toast.error("Silakan centang paket tambahan terlebih dahulu.");
-            return;
-        }
-        if (!paymentChoice) {
-            toast.error("Silakan pilih metode pembayaran (Bayar Sekarang atau Bayar Nanti).");
-            return;
-        }
-        if (paymentChoice === "sekarang" && !file) {
-            toast.error("Harap upload bukti pembayaran.");
-            return;
-        }
+        // if (!isChecked) {
+        //     toast.error("Silakan centang paket tambahan terlebih dahulu.");
+        //     return;
+        // }
+        // if (!paymentChoice) {
+        //     toast.error("Silakan pilih metode pembayaran (Bayar Sekarang atau Bayar Nanti).");
+        //     return;
+        // }
+        // if (paymentChoice === "sekarang" && !file) {
+        //     toast.error("Harap upload bukti pembayaran.");
+        //     return;
+        // }
 
         setSubmitting(true); // <-- start loading
 

@@ -87,7 +87,7 @@ const DetailCourseCustomer = () => {
                 setCourse(response.data.data[0]);
             } catch (err) {
                 setError("Gagal memuat data course. Silakan coba lagi.");
-                console.error("Error fetching course detail:", err);
+                console.error("Error fetching course detail:", err.response);
             } finally {
                 setLoading(false);
             }

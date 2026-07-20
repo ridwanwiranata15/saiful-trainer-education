@@ -93,7 +93,6 @@ const MyProfile = () => {
       toast.error("URL file tidak tersedia.");
       return;
     }
-    // Buka di tab baru
     window.open(url, "_blank");
   };
 
@@ -187,7 +186,29 @@ const MyProfile = () => {
   // ============================================
   // CEK STATUS PEMBAYARAN
   // ============================================
-  const isPaid = (order) => order.payment_option === "pay_now";
+  const getPaymentStatus = (order) => {
+    if (!order.payment_option || order.payment_option !== "pay_now") {
+      return "belum_upload";
+    }
+    // Asumsikan ada field 'status' pada order: pending, approved, rejected
+    return order.status || "pending"; // default pending jika belum ada status
+  };
+
+  // Helper untuk badge status
+  const renderStatusBadge = (status) => {
+    const statusMap = {
+      belum_upload: { label: "Belum Bayar", className: "bg-gray-200 text-gray-700" },
+      pending: { label: "Menunggu Verifikasi", className: "bg-yellow-100 text-yellow-800" },
+      approved: { label: "Pembayaran Diverifikasi", className: "bg-green-100 text-green-800" },
+      rejected: { label: "Ditolak", className: "bg-red-100 text-red-800" },
+    };
+    const info = statusMap[status] || statusMap.belum_upload;
+    return (
+      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${info.className}`}>
+        {info.label}
+      </span>
+    );
+  };
 
   // ============================================
   // RENDER LOADING
@@ -312,13 +333,18 @@ const MyProfile = () => {
 
             {orders.length > 0 ? (
               orders.map((order) => {
-                const paid = isPaid(order);
+                const status = getPaymentStatus(order);
+                const isPaid = status === 'approved';
+                const isPending = status === 'pending';
+                const isRejected = status === 'rejected';
+                const isBelumUpload = status === 'belum_upload';
+
                 return (
                   <div
                     key={order.id || order.course?.id}
                     className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden"
                   >
-                    {/* Header Course */}
+                    {/* Header Course dengan Status - hide badge jika is_certificate === 0 */}
                     <div className="p-5 border-b border-gray-100">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="flex items-center gap-4">
@@ -344,101 +370,130 @@ const MyProfile = () => {
                             </div>
                           </div>
                         </div>
+                        {/* Badge Status - hanya jika is_certificate bernilai true (1) */}
+                        {!!order.is_certificate && (
+                          <div className="flex-shrink-0">
+                            {renderStatusBadge(status)}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Tombol Aksi */}
-                    <div className="p-4 flex flex-wrap gap-3 border-b border-gray-100">
-                      {paid ? (
-                        // ===== SUDAH LUNAS → TAMPILKAN TOMBOL =====
-                        <>
-                          {/* Sertifikat */}
-                          {order.is_certificate ? (
-                            order.certificate_file ? (
+                    {/* ========================================================== */}
+                    {/* TOMBOL AKSI (Upload, Pending, Rejected, Paid) - ONLY if is_certificate */}
+                    {/* ========================================================== */}
+                    {!!order.is_certificate && (
+                      <div className="p-4 flex flex-wrap gap-3 border-b border-gray-100">
+                        {isBelumUpload && (
+                          <button
+                            onClick={() => openUploadModal(order)}
+                            className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl transition flex items-center gap-2 shadow-sm"
+                          >
+                            <Upload className="w-5 h-5" /> Upload Bukti Pembayaran
+                          </button>
+                        )}
+
+                        {isPending && (
+                          <button
+                            disabled
+                            className="bg-yellow-500 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm cursor-not-allowed"
+                          >
+                            <Loader2 className="w-5 h-5 animate-spin" /> Menunggu Verifikasi
+                          </button>
+                        )}
+
+                        {isRejected && (
+                          <>
+                            <button
+                              onClick={() => openUploadModal(order)}
+                              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-xl transition flex items-center gap-2 shadow-sm"
+                            >
+                              <Upload className="w-5 h-5" /> Upload Ulang Bukti
+                            </button>
+                            <span className="text-sm text-red-600 flex items-center">
+                              Bukti ditolak, silakan upload ulang.
+                            </span>
+                          </>
+                        )}
+
+                        {isPaid && (
+                          <>
+                            {/* Sertifikat */}
+                            {order.is_certificate ? (
+                              order.certificate_file ? (
+                                <button
+                                  onClick={() =>
+                                    handleDownload(
+                                      `${baseUrl}/storage/orders/certificates/${order.certificate_file}`
+                                    )
+                                  }
+                                  className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-xl transition flex items-center gap-2 shadow-sm"
+                                >
+                                  <Award className="w-5 h-5" /> Download Sertifikat
+                                </button>
+                              ) : (
+                                <button
+                                  disabled
+                                  className="bg-purple-300 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm cursor-not-allowed"
+                                >
+                                  <Award className="w-5 h-5" /> Sertifikat belum tersedia
+                                </button>
+                              )
+                            ) : null}
+
+                            {/* Slide */}
+                            {order.course?.material_path ? (
                               <button
                                 onClick={() =>
                                   handleDownload(
-                                    `${baseUrl}/storage/orders/certificates/${order.certificate_file}`
+                                    `${baseUrl}/storage/courses/materials/${order.course.material_path}`
                                   )
                                 }
-                                className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-xl transition flex items-center gap-2 shadow-sm"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-xl transition flex items-center gap-2 shadow-sm"
                               >
-                                <Award className="w-5 h-5" /> Download Sertifikat
+                                <Presentation className="w-5 h-5" /> Download Slide
                               </button>
                             ) : (
                               <button
                                 disabled
-                                className="bg-purple-300 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm cursor-not-allowed"
+                                className="bg-indigo-300 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm cursor-not-allowed"
                               >
-                                <Award className="w-5 h-5" /> Sertifikat belum tersedia
+                                <Presentation className="w-5 h-5" /> Slide belum tersedia
                               </button>
-                            )
-                          ) : null}
-
-                          {/* Slide */}
-                          {order.course?.material_path ? (
-                            <button
-                              onClick={() =>
-                                handleDownload(
-                                  `${baseUrl}/storage/courses/materials/${order.course.material_path}`
-                                )
-                              }
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-xl transition flex items-center gap-2 shadow-sm"
-                            >
-                              <Presentation className="w-5 h-5" /> Download Slide
-                            </button>
-                          ) : (
-                            <button
-                              disabled
-                              className="bg-indigo-300 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm cursor-not-allowed"
-                            >
-                              <Presentation className="w-5 h-5" /> Slide belum tersedia
-                            </button>
-                          )}
-
-                          {/* Video - Buka Modal */}
-                          {order.course?.video ? (
-                            <button
-                              onClick={() =>
-                                openVideoModal(
-                                  `http://127.0.0.1:8000/storage/courses/video/${order.course.video}`,
-                                  order.course.title
-                                )
-                              }
-                              className="bg-rose-600 hover:bg-rose-700 text-white font-medium py-2 px-4 rounded-xl transition flex items-center gap-2 shadow-sm"
-                            >
-                              <Video className="w-5 h-5" /> Putar Video
-                            </button>
-                          ) : (
-                            <button
-                              disabled
-                              className="bg-rose-300 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm cursor-not-allowed"
-                            >
-                              <Video className="w-5 h-5" /> Video belum tersedia
-                            </button>
-                          )}
-
-                          {/* Jika tidak ada satupun file */}
-                          {!order.course?.material_path &&
-                            !order.course?.video &&
-                            !order.certificate_file && (
-                              <span className="text-sm text-gray-500">
-                                Belum ada materi yang tersedia
-                              </span>
                             )}
-                        </>
-                      ) : (
-                        // ===== BELUM LUNAS → TOMBOL UPLOAD BUKTI =====
-                        <button
-                          onClick={() => openUploadModal(order)}
-                          className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl transition flex items-center gap-2 shadow-sm"
-                        >
-                          <Upload className="w-5 h-5" /> Upload Bukti Pembayaran
-                        </button>
-                      )}
-                    </div>
 
-                    {/* Tombol Grup WA & Zoom */}
+                            {/* Video - Buka Modal */}
+                            {order.course?.video ? (
+                              <button
+                                onClick={() =>
+                                  openVideoModal(
+                                    `http://127.0.0.1:8000/storage/courses/video/${order.course.video}`,
+                                    order.course.title
+                                  )
+                                }
+                                className="bg-rose-600 hover:bg-rose-700 text-white font-medium py-2 px-4 rounded-xl transition flex items-center gap-2 shadow-sm"
+                              >
+                                <Video className="w-5 h-5" /> Putar Video
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="bg-rose-300 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm cursor-not-allowed"
+                              >
+                                <Video className="w-5 h-5" /> Video belum tersedia
+                              </button>
+                            )}
+
+                            {/* Jika tidak ada satupun file */}
+                           
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ========================================================== */}
+                    {/* TOMBOL GRUP WA & ZOOM - SELALU TAMPIL */}
+                    {/* ========================================================== */}
                     <div className="p-4 flex flex-wrap gap-3">
                       <a
                         href="https://wa.me/6281234567890?text=Halo%20saya%20peserta%20Data%20Analyst%20Workshop"
